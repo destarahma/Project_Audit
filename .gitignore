@@ -1,0 +1,58 @@
+# Environment & Config Files
+config/database.php
+config/config.php
+
+# Sensitive Data
+*.env
+.env.local
+.env.production
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.code-workspace
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+error_log
+debug.log
+
+# Temporary Files
+*.tmp
+*.temp
+*.swp
+*~
+.*.swp
+
+# Database Backups
+*.sql.bak
+*.sql.backup
+backup/
+
+# Uploads & User Content
+uploads/
+files/
+storage/
+
+# Cache
+cache/
+*.cache
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Dependencies (if using Composer)
+vendor/
+composer.lock
+
+# Node modules (if using npm)
+node_modules/
+package-lock.json

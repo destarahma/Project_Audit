@@ -7,6 +7,10 @@ config/config.php
 .env.local
 .env.production
 
+# Utility & Debug Files
+generate_password.php
+clear_session.php
+
 # IDE & Editor Files
 .vscode/
 .idea/

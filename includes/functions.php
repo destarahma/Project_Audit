@@ -2,26 +2,36 @@
 // Helper functions
 
 function isLoggedIn() {
-    return true; // Always logged in (no login required)
+    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 }
 
 function requireLogin() {
-    // No login required - disabled
+    if (!isLoggedIn()) {
+        // Don't save redirect, just go to login
+        header('Location: ' . BASE_URL . 'login.php');
+        exit();
+    }
 }
 
 function getCurrentUser() {
-    // Return default user since no login required
+    if (!isLoggedIn()) {
+        return null;
+    }
+    
     return [
-        'id' => 1,
-        'username' => 'user',
-        'full_name' => 'User',
-        'email' => 'user@audit.com',
-        'role' => 'admin'
+        'id' => $_SESSION['user_id'],
+        'username' => $_SESSION['username'] ?? 'user',
+        'full_name' => $_SESSION['full_name'] ?? 'User',
+        'email' => $_SESSION['email'] ?? '',
+        'role' => $_SESSION['role'] ?? 'user'
     ];
 }
 
 function isAdmin() {
-    return true; // Everyone is admin (no login required)
+    if (!isLoggedIn()) {
+        return false;
+    }
+    return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 }
 
 function redirect($path) {

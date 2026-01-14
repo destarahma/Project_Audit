@@ -2,6 +2,9 @@
 require_once 'config/config.php';
 require_once 'includes/functions.php';
 
+// Require login to access dashboard
+requireLogin();
+
 $pageTitle = 'Dashboard - ' . SITE_NAME;
 
 // Get statistics

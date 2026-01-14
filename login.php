@@ -2,6 +2,12 @@
 require_once 'config/config.php';
 require_once 'includes/functions.php';
 
+// If already logged in, redirect to dashboard
+if (isLoggedIn()) {
+    header('Location: ' . BASE_URL . 'index.php');
+    exit();
+}
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -27,7 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['role'] = $user['role'];
                 
                 flashMessage('Login berhasil! Selamat datang, ' . $user['full_name']);
-                redirect('index.php');
+                
+                // Always redirect to index.php
+                header('Location: ' . BASE_URL . 'index.php');
+                exit();
             } else {
                 $error = 'Password salah';
             }
@@ -47,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - <?php echo SITE_NAME; ?></title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="login-page">
     <div class="login-container">

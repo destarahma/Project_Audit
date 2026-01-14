@@ -40,8 +40,8 @@ include '../includes/header.php';
 
 <div class="page-header">
     <h1>Kelola User</h1>
-    <button class="btn btn-primary" onclick="document.getElementById('addUserModal').style.display='block'">
-        ➕ Tambah User
+    <button class="btn btn-secondary" onclick="document.getElementById('addUserModal').style.display='block'">
+        <i class="fas fa-plus"></i> Tambah User
     </button>
 </div>
 

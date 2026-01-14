@@ -39,7 +39,7 @@ include '../includes/header.php';
 
 <div class="page-header">
     <h1>Daftar Audit</h1>
-    <a href="create.php" class="btn btn-primary">➕ Buat Audit Baru</a>
+    <a href="create.php" class="btn btn-secondary"><i class="fas fa-plus"></i> Buat Audit Baru</a>
 </div>
 
 <div class="card">

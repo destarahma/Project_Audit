@@ -26,7 +26,7 @@ include '../includes/header.php';
 ?>
 
 <div class="page-header">
-    <h1><i class="fas fa-clipboard-check"></i> Pilih Jenis Self Audit</h1>
+    <h1>Pilih Jenis Self Audit</h1>
     <a href="../index.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
 </div>
 
@@ -93,25 +93,6 @@ include '../includes/header.php';
 </div>
 
 <style>
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-}
-
-.page-header h1 {
-    font-size: 28px;
-    color: var(--text-color);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.page-header h1 i {
-    color: var(--primary-color);
-}
-
 .audit-types-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

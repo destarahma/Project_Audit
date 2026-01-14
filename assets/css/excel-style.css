@@ -7,11 +7,11 @@
 }
 
 .excel-header {
-    background: #C41E3A;
+    background: #3B82F6;
     color: white;
     padding: 20px;
     text-align: center;
-    border-bottom: 3px solid #A01829;
+    border-bottom: 3px solid #2563EB;
 }
 
 .excel-header h2 {
@@ -52,11 +52,11 @@
 
 .excel-section {
     margin: 0;
-    border-top: 2px solid #C41E3A;
+    border-top: 2px solid #3B82F6;
 }
 
 .excel-section-header {
-    background: #C41E3A;
+    background: #3B82F6;
     color: white;
     padding: 12px 15px;
     font-size: 14px;
@@ -229,7 +229,7 @@
 }
 
 .excel-score-card {
-    background: linear-gradient(135deg, #C41E3A 0%, #E63950 100%);
+    background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
     color: white;
     padding: 20px;
     margin: 20px 0;
@@ -261,7 +261,7 @@
     display: inline-block;
     padding: 8px 20px;
     background: white;
-    color: #C41E3A;
+    color: #3B82F6;
     border-radius: 20px;
     font-weight: 700;
     font-size: 14px;

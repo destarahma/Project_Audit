@@ -5,19 +5,19 @@
 }
 
 :root {
-    --primary-color: #C41E3A;
-    --primary-dark: #A01829;
-    --primary-light: #E63950;
-    --secondary-color: #6c757d;
-    --success-color: #52c41a;
-    --danger-color: #ff4d4f;
-    --warning-color: #faad14;
-    --sidebar-bg: #C41E3A;
-    --sidebar-hover: #A01829;
-    --light-bg: #f5f7fa;
-    --border-color: #e5e7eb;
-    --text-color: #1f2937;
-    --text-muted: #6b7280;
+    --primary-color: #3B82F6;
+    --primary-dark: #2563EB;
+    --primary-light: #60A5FA;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --sidebar-bg: #f8fafc;
+    --sidebar-hover: #eff6ff;
+    --light-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-color: #1e293b;
+    --text-muted: #64748b;
     --card-bg: #ffffff;
 }
 
@@ -40,7 +40,7 @@ body {
 .sidebar {
     width: 260px;
     background: var(--sidebar-bg);
-    color: white;
+    color: var(--text-color);
     padding: 0;
     position: fixed;
     height: 100vh;
@@ -48,12 +48,13 @@ body {
     z-index: 100;
     display: flex;
     flex-direction: column;
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);
+    border-right: 1px solid var(--border-color);
 }
 
 .sidebar-brand {
     padding: 28px 20px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     gap: 14px;
@@ -62,7 +63,7 @@ body {
 .sidebar-brand .brand-icon-wrapper {
     width: 48px;
     height: 48px;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--primary-color);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -80,7 +81,7 @@ body {
 .sidebar-brand h2 {
     font-size: 20px;
     font-weight: 700;
-    color: white;
+    color: var(--text-color);
     margin: 0;
     letter-spacing: 0.5px;
     line-height: 1.2;
@@ -88,7 +89,7 @@ body {
 
 .sidebar-brand .brand-subtitle {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-top: 2px;
@@ -102,7 +103,7 @@ body {
 
 .menu-divider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--border-color);
     margin: 16px 0;
 }
 
@@ -110,7 +111,7 @@ body {
     padding: 20px 20px 12px;
     font-size: 10px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 1.5px;
     margin-top: 4px;
@@ -121,7 +122,7 @@ body {
     align-items: center;
     gap: 14px;
     padding: 12px 20px;
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--text-color);
     text-decoration: none;
     transition: all 0.25s ease;
     font-size: 14px;
@@ -131,29 +132,30 @@ body {
 }
 
 .menu-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: white;
+    background: var(--sidebar-hover);
+    color: var(--text-color);
     padding-left: 22px;
+    border-left-color: var(--primary-color);
 }
 
 .menu-item.active {
-    background: rgba(255, 255, 255, 0.12);
-    color: white;
-    border-left-color: white;
+    background: var(--sidebar-hover);
+    color: var(--primary-color);
+    border-left-color: var(--primary-color);
     font-weight: 600;
 }
 
 .menu-item.active .menu-icon {
-    color: white;
+    color: var(--primary-color);
 }
 
 .menu-item.menu-logout {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-muted);
 }
 
 .menu-item.menu-logout:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.9);
+    background: var(--sidebar-hover);
+    color: var(--danger-color);
 }
 
 .menu-icon {
@@ -168,8 +170,8 @@ body {
 
 .sidebar-footer {
     padding: 20px 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid var(--border-color);
+    background: transparent;
     margin-top: auto;
 }
 
@@ -183,7 +185,7 @@ body {
 .user-avatar {
     width: 42px;
     height: 42px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--primary-color);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -191,7 +193,7 @@ body {
     font-size: 22px;
     color: white;
     flex-shrink: 0;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: none;
 }
 
 .user-details {
@@ -202,7 +204,7 @@ body {
 .user-name {
     font-size: 14px;
     font-weight: 600;
-    color: white;
+    color: var(--text-color);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -211,7 +213,7 @@ body {
 
 .user-role {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--text-muted);
     text-transform: capitalize;
     text-transform: capitalize;
 }

@@ -54,6 +54,21 @@ $stmt->bind_param("i", $templateId);
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
+    // Get items for this section
+    $itemStmt = $conn->prepare("
+        SELECT * FROM template_items 
+        WHERE section_id = ? 
+        ORDER BY item_order
+    ");
+    $itemStmt->bind_param("i", $row['id']);
+    $itemStmt->execute();
+    $itemsResult = $itemStmt->get_result();
+    $row['items'] = [];
+    while ($item = $itemsResult->fetch_assoc()) {
+        $row['items'][] = $item;
+    }
+    $itemStmt->close();
+    
     $sections[] = $row;
 }
 $stmt->close();
@@ -74,6 +89,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             flashMessage('Template berhasil diupdate', 'success');
         } else {
             flashMessage('Gagal update template', 'danger');
+        }
+        $stmt->close();
+        redirect('admin/template_edit.php?id=' . $templateId);
+    }
+    
+    if ($_POST['action'] === 'update_item') {
+        // Update item
+        $itemId = (int)$_POST['item_id'];
+        $itemText = sanitize($_POST['item_text']);
+        $fieldType = sanitize($_POST['field_type']);
+        $isRequired = isset($_POST['is_required']) ? 1 : 0;
+        $scoreValue = (int)$_POST['score_value'];
+        
+        $stmt = $conn->prepare("UPDATE template_items SET item_text = ?, field_type = ?, is_required = ?, score_value = ? WHERE id = ?");
+        $stmt->bind_param("ssiii", $itemText, $fieldType, $isRequired, $scoreValue, $itemId);
+        
+        if ($stmt->execute()) {
+            flashMessage('Item berhasil diupdate', 'success');
+        } else {
+            flashMessage('Gagal update item', 'danger');
         }
         $stmt->close();
         redirect('admin/template_edit.php?id=' . $templateId);
@@ -164,35 +199,182 @@ include '../includes/header.php';
 
 <!-- Sections Overview -->
 <div class="card">
-    <h3>📑 Section & Items</h3>
+    <h3>📑 Sections & Items</h3>
+    <p style="color: #6c757d; font-size: 14px; margin-bottom: 20px;">
+        Struktur checklist yang akan muncul di form audit. Klik section untuk melihat item-item di dalamnya.
+    </p>
+    
     <?php if (count($sections) > 0): ?>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Nama Section</th>
-                <th>Jumlah Item</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($sections as $section): ?>
-            <tr>
-                <td><?php echo $section['section_order']; ?></td>
-                <td><?php echo htmlspecialchars($section['section_title']); ?></td>
-                <td><span class="badge"><?php echo $section['item_count']; ?> items</span></td>
-                <td>
-                    <a href="section_edit.php?id=<?php echo $section['id']; ?>" class="btn btn-sm btn-primary">✏️ Edit Section</a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <a href="section_add.php?template_id=<?php echo $templateId; ?>" class="btn btn-primary">➕ Tambah Section Baru</a>
+    <div class="sections-container">
+        <?php foreach ($sections as $section): ?>
+        <div class="section-card" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 15px; overflow: hidden;">
+            <div class="section-header" style="background: var(--primary-color); color: white; padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;"
+                 onclick="toggleSection(<?php echo $section['id']; ?>)">
+                <div>
+                    <strong style="font-size: 16px;"><?php echo $section['section_order']; ?>. <?php echo htmlspecialchars($section['section_title']); ?></strong>
+                    <span style="margin-left: 15px; opacity: 0.9; font-size: 13px;">
+                        <i class="fas fa-list"></i> <?php echo $section['item_count']; ?> items
+                    </span>
+                </div>
+                <i class="fas fa-chevron-down" id="icon-<?php echo $section['id']; ?>"></i>
+            </div>
+            
+            <div class="section-content" id="section-<?php echo $section['id']; ?>" style="display: none; padding: 20px;">
+                <?php if (count($section['items']) > 0): ?>
+                <table class="table" style="margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th width="60px">Order</th>
+                            <th>Item Text</th>
+                            <th width="120px">Field Type</th>
+                            <th width="80px">Required</th>
+                            <th width="80px">Score</th>
+                            <th width="100px">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($section['items'] as $item): ?>
+                        <tr>
+                            <td><?php echo $item['item_order']; ?></td>
+                            <td><?php echo htmlspecialchars($item['item_text']); ?></td>
+                            <td>
+                                <span class="badge" style="background: 
+                                    <?php 
+                                    echo $item['field_type'] == 'radio' ? '#17a2b8' : 
+                                        ($item['field_type'] == 'date' ? '#28a745' : 
+                                        ($item['field_type'] == 'text' ? '#ffc107' : '#6c757d')); 
+                                    ?>; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">
+                                    <?php echo strtoupper($item['field_type']); ?>
+                                </span>
+                            </td>
+                            <td>
+                                <?php if ($item['is_required']): ?>
+                                    <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+                                <?php else: ?>
+                                    <i class="fas fa-times-circle" style="color: #ccc;"></i>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo $item['score_value']; ?></td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="editItem(<?php echo htmlspecialchars(json_encode($item)); ?>)">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php else: ?>
+                <p class="no-data">Belum ada item dalam section ini.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+        <strong>ℹ️ Catatan:</strong> Untuk edit struktur sections & items, silakan edit langsung di database atau hubungi developer.
+        Perubahan struktur template memerlukan penyesuaian di form audit.
+    </div>
+    
     <?php else: ?>
-    <p class="no-data">Belum ada section.</p>
-    <a href="section_add.php?template_id=<?php echo $templateId; ?>" class="btn btn-primary">➕ Tambah Section Pertama</a>
+    <p class="no-data">Belum ada section dalam template ini.</p>
     <?php endif; ?>
+</div>
+
+<script>
+function toggleSection(sectionId) {
+    const content = document.getElementById('section-' + sectionId);
+    const icon = document.getElementById('icon-' + sectionId);
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.className = 'fas fa-chevron-up';
+    } else {
+        content.style.display = 'none';
+        icon.className = 'fas fa-chevron-down';
+    }
+}
+
+function editItem(item) {
+    document.getElementById('editModal').style.display = 'block';
+    document.getElementById('item_id').value = item.id;
+    document.getElementById('item_order').value = item.item_order;
+    document.getElementById('item_text').value = item.item_text;
+    document.getElementById('field_type').value = item.field_type;
+    document.getElementById('is_required').checked = item.is_required == 1;
+    document.getElementById('score_value').value = item.score_value;
+}
+
+function closeModal() {
+    document.getElementById('editModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('editModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+
+<!-- Edit Item Modal -->
+<div id="editModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color: white; margin: 5% auto; padding: 0; width: 600px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <div style="background: var(--primary-color); color: white; padding: 20px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;"><i class="fas fa-edit"></i> Edit Item</h3>
+            <button onclick="closeModal()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+        </div>
+        
+        <form method="POST" style="padding: 25px;">
+            <input type="hidden" name="action" value="update_item">
+            <input type="hidden" name="item_id" id="item_id">
+            
+            <div class="form-group">
+                <label>Order</label>
+                <input type="number" id="item_order" class="form-control" disabled style="background: #e9ecef;">
+            </div>
+            
+            <div class="form-group">
+                <label>Item Text <span style="color: red;">*</span></label>
+                <textarea name="item_text" id="item_text" class="form-control" rows="3" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Field Type <span style="color: red;">*</span></label>
+                <select name="field_type" id="field_type" class="form-control" required>
+                    <option value="radio">Radio (Ada/Tidak Ada)</option>
+                    <option value="date">Date (Tanggal)</option>
+                    <option value="text">Text</option>
+                    <option value="number">Number</option>
+                    <option value="textarea">Textarea</option>
+                    <option value="checkbox">Checkbox</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Score Value</label>
+                <input type="number" name="score_value" id="score_value" class="form-control" min="0" value="0">
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="is_required" id="is_required" value="1">
+                    Required (Wajib diisi)
+                </label>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px;">
+                <button type="button" onclick="closeModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Batal
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Approval Rules -->

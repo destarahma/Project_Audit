@@ -4,6 +4,14 @@ require_once '../includes/functions.php';
 
 requireLogin();
 
+// Function to clean Rupiah format to number
+function cleanRupiah($value) {
+    if (empty($value)) return 0;
+    // Remove "Rp", spaces, dots (thousand separator)
+    $cleaned = preg_replace('/[^0-9]/', '', $value);
+    return floatval($cleaned);
+}
+
 if (!isset($_GET['id'])) {
     redirect('audit/list.php');
 }
@@ -529,9 +537,9 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
         </tr>
         <tr>
             <td>Harga Satuan</td>
-            <td><?php echo htmlspecialchars($submission['unit_price'] ?: '-'); ?></td>
+            <td><strong>Rp <?php echo $submission['unit_price'] ? number_format(cleanRupiah($submission['unit_price']), 0, ',', '.') : '-'; ?></strong></td>
             <td><strong>Total Harga</strong></td>
-            <td><?php echo htmlspecialchars($submission['total_price'] ?: '-'); ?></td>
+            <td><strong>Rp <?php echo $submission['total_price'] ? number_format(cleanRupiah($submission['total_price']), 0, ',', '.') : '-'; ?></strong></td>
         </tr>
         <?php if (!empty($submission['required_approvals'])): ?>
         <tr>
@@ -568,10 +576,40 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($section['items'] as $item): ?>
+                <?php 
+                $displayOrder = 1;
+                foreach ($section['items'] as $item): 
+                    // Skip items dengan order > 10 (ini adalah field tanggal/harga tambahan)
+                    if ($item['item_order'] >= 10 && $item['item_order'] < 100) {
+                        continue;
+                    }
+                    
+                    // Skip textarea (item_order >= 100)
+                    if ($item['item_order'] >= 100) {
+                        continue;
+                    }
+                    
+                    // Cari tanggal yang sesuai untuk item ini (jika ada)
+                    $dateValue = '';
+                    foreach ($section['items'] as $dateItem) {
+                        if ($dateItem['item_order'] == ($item['item_order'] * 10 + 1) && $dateItem['field_type'] == 'date') {
+                            $dateValue = $dateItem['response_value'];
+                            break;
+                        }
+                    }
+                    
+                    // Cari harga yang sesuai untuk item ini (untuk section Pelaksanaan Penjualan)
+                    $priceValue = '';
+                    foreach ($section['items'] as $priceItem) {
+                        if ($priceItem['item_order'] == ($item['item_order'] * 10 + 1) && $priceItem['field_type'] == 'number') {
+                            $priceValue = $priceItem['response_value'];
+                            break;
+                        }
+                    }
+                ?>
                 <tr>
                     <td>
-                        <span class="item-number"><?php echo $item['item_order']; ?>.</span> 
+                        <span class="item-number"><?php echo $displayOrder; ?>.</span> 
                         <?php echo htmlspecialchars($item['item_text']); ?>
                     </td>
                     <td class="excel-cell-center">
@@ -588,10 +626,30 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
                             <span class="excel-result-check no">✗</span>
                             <?php endif; ?>
                         </td>
-                        <td class="excel-cell-center">-</td>
+                        <td class="excel-cell-center">
+                            <?php echo $dateValue ? formatDate($dateValue) : '-'; ?>
+                        </td>
                     <?php elseif ($item['field_type'] === 'date'): ?>
                         <td colspan="3" class="excel-result-text">
                             <?php echo $item['response_value'] ? formatDate($item['response_value']) : '-'; ?>
+                        </td>
+                    <?php elseif ($item['field_type'] === 'text'): ?>
+                        <td colspan="3" class="excel-result-text">
+                            <?php 
+                            // Tampilkan nama vendor + harga (jika ada)
+                            if (!empty($item['response_value'])) {
+                                echo htmlspecialchars($item['response_value']);
+                                if (!empty($priceValue)) {
+                                    echo ' - <strong>Rp ' . number_format(floatval($priceValue), 0, ',', '.') . '</strong>';
+                                }
+                            } else {
+                                echo '-';
+                            }
+                            ?>
+                        </td>
+                    <?php elseif ($item['field_type'] === 'number'): ?>
+                        <td colspan="3" class="excel-result-text">
+                            <?php echo $item['response_value'] ? '<strong>Rp ' . number_format(floatval($item['response_value']), 0, ',', '.') . '</strong>' : '-'; ?>
                         </td>
                     <?php else: ?>
                         <td colspan="3" class="excel-result-text">
@@ -599,7 +657,10 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
                         </td>
                     <?php endif; ?>
                 </tr>
-                <?php endforeach; ?>
+                <?php 
+                    $displayOrder++;
+                endforeach; 
+                ?>
             </tbody>
         </table>
         

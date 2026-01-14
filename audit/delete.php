@@ -11,18 +11,26 @@ if (!isset($_GET['id'])) {
 $submissionId = (int)$_GET['id'];
 $currentUser = getCurrentUser();
 
-// Only allow deletion of own drafts
+// Get submission details
 $conn = getConnection();
 $stmt = $conn->prepare("
     SELECT * FROM audit_submissions 
-    WHERE id = ? AND submitted_by = ? AND status = 'draft'
+    WHERE id = ?
 ");
-$stmt->bind_param("ii", $submissionId, $currentUser['id']);
+$stmt->bind_param("i", $submissionId);
 $stmt->execute();
 $submission = $stmt->get_result()->fetch_assoc();
 
-if (!$submission && !isAdmin()) {
-    flashMessage('Anda tidak dapat menghapus audit ini', 'danger');
+if (!$submission) {
+    flashMessage('Audit tidak ditemukan', 'danger');
+    redirect('audit/list.php');
+}
+
+// Check permissions
+// Admin can delete any audit
+// Regular user can only delete their own audits
+if (!isAdmin() && $submission['submitted_by'] != $currentUser['id']) {
+    flashMessage('Anda tidak memiliki izin untuk menghapus audit ini', 'danger');
     redirect('audit/list.php');
 }
 

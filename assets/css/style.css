@@ -648,6 +648,47 @@ body {
 .btn-sm {
     padding: 6px 14px;
     font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 4px;
+}
+
+.btn-sm i {
+    font-size: 12px;
+}
+
+.btn-view {
+    background: #f0f5ff;
+    color: #597ef7;
+    border: 1px solid #d6e4ff;
+}
+
+.btn-view:hover {
+    background: #d6e4ff;
+    color: #2f54eb;
+}
+
+.btn-edit {
+    background: #fff7e6;
+    color: #fa8c16;
+    border: 1px solid #ffe7ba;
+}
+
+.btn-edit:hover {
+    background: #ffe7ba;
+    color: #d46b08;
+}
+
+.btn-delete {
+    background: #fff1f0;
+    color: #ef4444;
+    border: 1px solid #ffccc7;
+}
+
+.btn-delete:hover {
+    background: #ffccc7;
+    color: #cf1322;
 }
 
 .btn-block {

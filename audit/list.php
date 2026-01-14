@@ -86,13 +86,20 @@ include '../includes/header.php';
                 </td>
                 <td><?php echo formatDate($row['created_at']); ?></td>
                 <td>
-                    <a href="view.php?id=<?php echo $row['id']; ?>" class="btn btn-sm">👁️ Lihat</a>
+                    <a href="view.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-view" title="Lihat Detail">
+                        <i class="fas fa-eye"></i> Lihat
+                    </a>
                     <?php if ($row['status'] === 'draft'): ?>
-                    <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary">✏️ Edit</a>
-                    <a href="delete.php?id=<?php echo $row['id']; ?>" 
-                       class="btn btn-sm btn-danger" 
-                       onclick="return confirm('Yakin ingin menghapus?')">🗑️ Hapus</a>
+                    <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-edit" title="Edit Audit">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
                     <?php endif; ?>
+                    <a href="delete.php?id=<?php echo $row['id']; ?>" 
+                       class="btn btn-sm btn-delete" 
+                       onclick="return confirm('Apakah Anda yakin ingin menghapus audit ini?')"
+                       title="Hapus Audit">
+                        <i class="fas fa-trash"></i> Hapus
+                    </a>
                 </td>
             </tr>
             <?php endwhile; ?>

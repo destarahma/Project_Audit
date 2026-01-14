@@ -250,7 +250,7 @@ body {
     font-size: 32px;
     font-weight: 700;
     margin-bottom: 8px;
-    color: white;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -258,11 +258,12 @@ body {
 
 .greeting-content h1 i {
     font-size: 28px;
+    color: #0f172a;
 }
 
 .greeting-content p {
     font-size: 16px;
-    opacity: 0.95;
+    color: #1e293b;
     margin: 0;
 }
 
@@ -357,7 +358,7 @@ body {
     left: 0;
     width: 4px;
     height: 100%;
-    background: var(--primary-color);
+    background: #597ef7;
     transform: scaleY(0);
     transition: transform 0.3s ease;
 }
@@ -368,8 +369,8 @@ body {
 
 .menu-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    border-color: rgba(196, 30, 58, 0.3);
+    box-shadow: 0 8px 24px rgba(89, 126, 247, 0.2);
+    border-color: rgba(89, 126, 247, 0.4);
 }
 
 .menu-card .menu-icon {
@@ -480,7 +481,7 @@ body {
 
 .aktivitas-item:hover {
     background: var(--light-bg);
-    border-color: rgba(196, 30, 58, 0.2);
+    border-color: rgba(89, 126, 247, 0.3);
     transform: translateX(4px);
 }
 

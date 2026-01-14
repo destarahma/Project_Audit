@@ -56,7 +56,7 @@ include 'includes/header.php';
         <h3><i class="fas fa-th-large"></i> Menu Utama</h3>
         <div class="menu-grid">
             <a href="audit/select_type.php" class="menu-card">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #fff4e6 0%, #ffe7ba 100%); color: var(--primary-color);">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%); color: #597ef7;">
                     <i class="fas fa-plus-circle"></i>
                 </div>
                 <div class="menu-content">
@@ -66,7 +66,7 @@ include 'includes/header.php';
             </a>
             
             <a href="audit/list.php" class="menu-card">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%); color: #1890ff;">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%); color: #597ef7;">
                     <i class="fas fa-list-alt"></i>
                 </div>
                 <div class="menu-content">
@@ -87,7 +87,7 @@ include 'includes/header.php';
             
             <?php if (isAdmin()): ?>
             <a href="admin/users.php" class="menu-card">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #fff7e6 0%, #ffd591 100%); color: #fa8c16;">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%); color: #597ef7;">
                     <i class="fas fa-users"></i>
                 </div>
                 <div class="menu-content">

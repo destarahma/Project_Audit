@@ -26,171 +26,171 @@ include '../includes/header.php';
 ?>
 
 <div class="page-header">
-    <h1>Pilih Jenis Self Audit</h1>
-    <a href="../index.php" class="btn btn-secondary">← Kembali</a>
+    <h1><i class="fas fa-clipboard-check"></i> Pilih Jenis Self Audit</h1>
+    <a href="../index.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
 </div>
 
 <div class="audit-types-grid">
     <!-- Mix Oil Audit -->
-    <div class="audit-type-card">
-        <div class="audit-type-icon" style="background: linear-gradient(135deg, #C41E3A 0%, #E63950 100%);">
-            <span>🛢️</span>
-        </div>
-        <h3>Audit Jual Beli Mix Oil</h3>
-        <p>Self audit untuk proses penjualan dan pembelian mix oil</p>
-        <div class="audit-type-templates">
-            <?php if (isset($auditTypes['mix_oil'])): ?>
-                <?php foreach ($auditTypes['mix_oil'] as $template): ?>
-                    <a href="create.php?template_id=<?php echo $template['id']; ?>" class="template-link">
-                        <span>📝</span> <?php echo htmlspecialchars($template['template_name']); ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="no-template">Belum ada template</p>
-            <?php endif; ?>
-        </div>
-    </div>
+    <?php if (isset($auditTypes['mix_oil'])): ?>
+        <?php foreach ($auditTypes['mix_oil'] as $template): ?>
+        <a href="create.php?template_id=<?php echo $template['id']; ?>" class="audit-type-card">
+            <div class="audit-type-icon">
+                <i class="fas fa-oil-can"></i>
+            </div>
+            <div class="audit-type-content">
+                <h3>Audit Jual Beli Mix Oil</h3>
+                <p>Self audit untuk proses penjualan dan pembelian mix oil</p>
+            </div>
+        </a>
+        <?php endforeach; ?>
+    <?php endif; ?>
 
     <!-- Vendor Evaluation -->
-    <div class="audit-type-card">
-        <div class="audit-type-icon" style="background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);">
-            <span>⭐</span>
-        </div>
-        <h3>Evaluasi Vendor</h3>
-        <p>Self audit untuk mengevaluasi performa vendor/supplier</p>
-        <div class="audit-type-templates">
-            <?php if (isset($auditTypes['vendor_evaluation'])): ?>
-                <?php foreach ($auditTypes['vendor_evaluation'] as $template): ?>
-                    <a href="create.php?template_id=<?php echo $template['id']; ?>" class="template-link">
-                        <span>📝</span> <?php echo htmlspecialchars($template['template_name']); ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="no-template">Belum ada template</p>
-            <?php endif; ?>
-        </div>
-    </div>
+    <?php if (isset($auditTypes['vendor_evaluation'])): ?>
+        <?php foreach ($auditTypes['vendor_evaluation'] as $template): ?>
+        <a href="create.php?template_id=<?php echo $template['id']; ?>" class="audit-type-card">
+            <div class="audit-type-icon">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="audit-type-content">
+                <h3>Evaluasi Vendor</h3>
+                <p>Self audit untuk mengevaluasi performa vendor/supplier</p>
+            </div>
+        </a>
+        <?php endforeach; ?>
+    <?php endif; ?>
 
     <!-- Process Audit -->
-    <div class="audit-type-card">
-        <div class="audit-type-icon" style="background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);">
-            <span>⚙️</span>
-        </div>
-        <h3>Audit Proses Operasional</h3>
-        <p>Self audit untuk proses operasional dan SOP internal</p>
-        <div class="audit-type-templates">
-            <?php if (isset($auditTypes['process_audit'])): ?>
-                <?php foreach ($auditTypes['process_audit'] as $template): ?>
-                    <a href="create.php?template_id=<?php echo $template['id']; ?>" class="template-link">
-                        <span>📝</span> <?php echo htmlspecialchars($template['template_name']); ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="no-template">Belum ada template</p>
-            <?php endif; ?>
-        </div>
-    </div>
+    <?php if (isset($auditTypes['process_audit'])): ?>
+        <?php foreach ($auditTypes['process_audit'] as $template): ?>
+        <a href="create.php?template_id=<?php echo $template['id']; ?>" class="audit-type-card">
+            <div class="audit-type-icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <div class="audit-type-content">
+                <h3>Audit Proses Operasional</h3>
+                <p>Self audit untuk proses operasional dan SOP internal</p>
+            </div>
+        </a>
+        <?php endforeach; ?>
+    <?php endif; ?>
 
     <!-- Compliance Check -->
-    <div class="audit-type-card">
-        <div class="audit-type-icon" style="background: linear-gradient(135deg, #fa8c16 0%, #ffa940 100%);">
-            <span>📋</span>
-        </div>
-        <h3>Kepatuhan Regulasi</h3>
-        <p>Self audit untuk memastikan kepatuhan terhadap regulasi</p>
-        <div class="audit-type-templates">
-            <?php if (isset($auditTypes['compliance_check'])): ?>
-                <?php foreach ($auditTypes['compliance_check'] as $template): ?>
-                    <a href="create.php?template_id=<?php echo $template['id']; ?>" class="template-link">
-                        <span>📝</span> <?php echo htmlspecialchars($template['template_name']); ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="no-template">Belum ada template</p>
-            <?php endif; ?>
-        </div>
-    </div>
+    <?php if (isset($auditTypes['compliance_check'])): ?>
+        <?php foreach ($auditTypes['compliance_check'] as $template): ?>
+        <a href="create.php?template_id=<?php echo $template['id']; ?>" class="audit-type-card">
+            <div class="audit-type-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="audit-type-content">
+                <h3>Kepatuhan Regulasi</h3>
+                <p>Self audit untuk memastikan kepatuhan terhadap regulasi</p>
+            </div>
+        </a>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header h1 i {
+    color: var(--primary-color);
+}
+
 .audit-types-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
     margin-top: 24px;
 }
 
 .audit-type-card {
-    background: var(--card-bg);
+    background: white;
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 24px;
-    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 28px 24px;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    position: relative;
+    overflow: hidden;
+}
+
+.audit-type-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #597ef7;
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.audit-type-card:hover::before {
+    transform: scaleY(1);
 }
 
 .audit-type-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 24px rgba(89, 126, 247, 0.2);
+    border-color: rgba(89, 126, 247, 0.4);
 }
 
 .audit-type-icon {
-    width: 80px;
-    height: 80px;
-    border-radius: 16px;
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 36px;
-    margin-bottom: 16px;
+    font-size: 24px;
+    background: linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%);
+    color: #597ef7;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
-.audit-type-card h3 {
-    font-size: 18px;
-    font-weight: 700;
+.audit-type-card:hover .audit-type-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.audit-type-content {
+    flex: 1;
+}
+
+.audit-type-content h3 {
+    font-size: 17px;
+    font-weight: 600;
     margin-bottom: 8px;
     color: var(--text-color);
 }
 
-.audit-type-card > p {
+.audit-type-content p {
     font-size: 14px;
     color: var(--text-muted);
-    margin-bottom: 16px;
-    line-height: 1.6;
-}
-
-.audit-type-templates {
-    border-top: 1px solid var(--border-color);
-    padding-top: 16px;
-}
-
-.template-link {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px;
-    background: var(--light-bg);
-    border-radius: 8px;
-    text-decoration: none;
-    color: var(--text-color);
-    margin-bottom: 8px;
-    transition: all 0.2s;
-    font-size: 14px;
-}
-
-.template-link:hover {
-    background: var(--primary-color);
-    color: white;
-    transform: translateX(4px);
-}
-
-.template-link span {
-    font-size: 18px;
-}
-
-.no-template {
-    color: var(--text-muted);
-    font-size: 13px;
-    font-style: italic;
+    margin: 0;
+    line-height: 1.5;
 }
 </style>
 

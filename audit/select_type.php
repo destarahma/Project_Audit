@@ -31,73 +31,107 @@ include '../includes/header.php';
 </div>
 
 <div class="audit-types-grid">
-    <!-- Mix Oil Audit -->
-    <?php if (isset($auditTypes['mix_oil'])): ?>
-        <?php foreach ($auditTypes['mix_oil'] as $template): ?>
-        <a href="create.php?template_id=<?php echo $template['id']; ?>" class="audit-type-card">
-            <div class="audit-type-icon">
-                <i class="fas fa-oil-can"></i>
-            </div>
-            <div class="audit-type-content">
-                <h3>Audit Jual Beli Mix Oil</h3>
-                <p>Self audit untuk proses penjualan dan pembelian mix oil</p>
-            </div>
-        </a>
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <!-- Card 1: Self Audit Jual Beli Mix Oil -->
+    <a href="create.php?template_id=1" class="audit-type-card">
+        <div class="audit-type-icon">
+            <i class="fas fa-oil-can"></i>
+        </div>
+        <div class="audit-type-content">
+            <h3>Self Audit : Jual Beli Mix Oil</h3>
+            <p>Self audit untuk proses penjualan dan pembelian mix oil</p>
+        </div>
+    </a>
 
-    <!-- Vendor Evaluation -->
-    <?php if (isset($auditTypes['vendor_evaluation'])): ?>
-        <?php foreach ($auditTypes['vendor_evaluation'] as $template): ?>
-        <a href="create.php?template_id=<?php echo $template['id']; ?>" class="audit-type-card">
-            <div class="audit-type-icon">
-                <i class="fas fa-star"></i>
-            </div>
-            <div class="audit-type-content">
-                <h3>Evaluasi Vendor</h3>
-                <p>Self audit untuk mengevaluasi performa vendor/supplier</p>
-            </div>
-        </a>
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <!-- Card 2: Self Audit Jual Barbes -->
+    <a href="create.php?template_id=5" class="audit-type-card">
+        <div class="audit-type-icon">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="audit-type-content">
+            <h3>Self Audit : Jual Barbes</h3>
+            <p>Self audit untuk proses penjualan Barbes</p>
+        </div>
+    </a>
 
-    <!-- Process Audit -->
-    <?php if (isset($auditTypes['process_audit'])): ?>
-        <?php foreach ($auditTypes['process_audit'] as $template): ?>
-        <a href="create.php?template_id=<?php echo $template['id']; ?>" class="audit-type-card">
-            <div class="audit-type-icon">
-                <i class="fas fa-cogs"></i>
-            </div>
-            <div class="audit-type-content">
-                <h3>Audit Proses Operasional</h3>
-                <p>Self audit untuk proses operasional dan SOP internal</p>
-            </div>
-        </a>
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <!-- Card 3: Self Audit Jual Aset -->
+    <a href="create.php?template_id=6" class="audit-type-card">
+        <div class="audit-type-icon">
+            <i class="fas fa-boxes"></i>
+        </div>
+        <div class="audit-type-content">
+            <h3>Self Audit : Jual Aset</h3>
+            <p>Self audit untuk proses penjualan aset</p>
+        </div>
+    </a>
 
-    <!-- Compliance Check -->
-    <?php if (isset($auditTypes['compliance_check'])): ?>
-        <?php foreach ($auditTypes['compliance_check'] as $template): ?>
-        <a href="create.php?template_id=<?php echo $template['id']; ?>" class="audit-type-card">
-            <div class="audit-type-icon">
-                <i class="fas fa-clipboard-list"></i>
-            </div>
-            <div class="audit-type-content">
-                <h3>Kepatuhan Regulasi</h3>
-                <p>Self audit untuk memastikan kepatuhan terhadap regulasi</p>
-            </div>
-        </a>
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <!-- Card 4: PO Non OA -->
+    <a href="create.php?template_id=7" class="audit-type-card">
+        <div class="audit-type-icon">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <div class="audit-type-content">
+            <h3>PO Non OA</h3>
+            <p>Purchase Order Non OA</p>
+        </div>
+    </a>
+
+    <!-- Card 5: PO Tagging OA -->
+    <a href="create.php?template_id=8" class="audit-type-card">
+        <div class="audit-type-icon">
+            <i class="fas fa-tags"></i>
+        </div>
+        <div class="audit-type-content">
+            <h3>PO Tagging OA</h3>
+            <p>Purchase Order dengan Tagging OA</p>
+        </div>
+    </a>
 </div>
 
 <style>
 .audit-types-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(6, 1fr);
     gap: 20px;
     margin-top: 24px;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* 3 kartu pertama - masing-masing 2 kolom dari 6 */
+.audit-types-grid .audit-type-card:nth-child(1),
+.audit-types-grid .audit-type-card:nth-child(2),
+.audit-types-grid .audit-type-card:nth-child(3) {
+    grid-column: span 2;
+}
+
+/* 2 kartu bawah - centered, masing-masing 2 kolom, mulai dari kolom 2 */
+.audit-types-grid .audit-type-card:nth-child(4) {
+    grid-column: 2 / 4;
+}
+
+.audit-types-grid .audit-type-card:nth-child(5) {
+    grid-column: 4 / 6;
+}
+
+@media (max-width: 1024px) {
+    .audit-types-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .audit-types-grid .audit-type-card:nth-child(1),
+    .audit-types-grid .audit-type-card:nth-child(2),
+    .audit-types-grid .audit-type-card:nth-child(3),
+    .audit-types-grid .audit-type-card:nth-child(4),
+    .audit-types-grid .audit-type-card:nth-child(5) {
+        grid-column: span 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .audit-types-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .audit-type-card {

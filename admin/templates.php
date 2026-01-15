@@ -20,7 +20,7 @@ include '../includes/header.php';
 
 <div class="page-header">
     <h1>Kelola Template Audit</h1>
-    <a href="template_create.php" class="btn btn-secondary"><i class="fas fa-plus"></i> Tambah Template Baru</a>
+    <a href="template_create.php" class="btn btn-secondary"><i class="fas fa-plus"></i> Tambah Template</a>
 </div>
 
 <div class="card">
@@ -57,6 +57,9 @@ include '../includes/header.php';
                     </a>
                     <a href="template_view.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-view" title="Lihat">
                         <i class="fas fa-eye"></i> Lihat
+                    </a>
+                    <a href="template_copy.php?from=<?php echo $row['id']; ?>" class="btn btn-sm btn-secondary" title="Copy">
+                        <i class="fas fa-copy"></i> Copy
                     </a>
                 </td>
             </tr>

@@ -91,7 +91,7 @@ include '../includes/header.php';
     <h1>Preview Template Audit</h1>
     <div>
         <a href="templates.php" class="btn btn-secondary">← Kembali</a>
-        <a href="template_edit.php?id=<?php echo $templateId; ?>" class="btn btn-primary">✏️ Edit Template</a>
+        <a href="template_edit.php?id=<?php echo $templateId; ?>" class="btn btn-primary">Edit Template</a>
     </div>
 </div>
 

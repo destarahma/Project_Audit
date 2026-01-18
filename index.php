@@ -14,13 +14,13 @@ $conn = getConnection();
 $result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions");
 $totalSubmissions = $result->fetch_assoc()['total'];
 
-// Pending submissions
-$result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'draft'");
-$draftSubmissions = $result->fetch_assoc()['total'];
-
 // Approved submissions
 $result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'approved'");
 $approvedSubmissions = $result->fetch_assoc()['total'];
+
+// Submitted (pending review) submissions
+$result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'submitted'");
+$submittedSubmissions = $result->fetch_assoc()['total'];
 
 // Recent submissions
 $stmt = $conn->prepare("
@@ -51,7 +51,7 @@ include 'includes/header.php';
     <div class="saldo-card">
         <p class="saldo-label"><i class="fas fa-clipboard-list"></i> Total Audit</p>
         <h2 class="saldo-amount"><?php echo $totalSubmissions; ?></h2>
-        <p class="saldo-info"><span style="color: var(--success-color);"><i class="fas fa-check-circle"></i> <?php echo $approvedSubmissions; ?> Approved</span> | <i class="fas fa-file-alt"></i> Draft: <?php echo $draftSubmissions; ?></p>
+        <p class="saldo-info"><span style="color: var(--success-color);"><i class="fas fa-check-circle"></i> <?php echo $approvedSubmissions; ?> Approved</span> | <span style="color: #ffc107;"><i class="fas fa-clock"></i> <?php echo $submittedSubmissions; ?> Pending Review</span></p>
     </div>
     
     <!-- Menu Utama -->
@@ -124,7 +124,18 @@ include 'includes/header.php';
                     <span class="amount <?php echo $row['status'] === 'approved' ? 'success' : ($row['status'] === 'rejected' ? 'danger' : ''); ?>">
                         <?php echo ucfirst($row['status']); ?>
                     </span>
-                    <span class="status-badge"><?php echo $row['status'] === 'draft' ? 'Draft' : ($row['status'] === 'submitted' ? 'Review' : $row['status']); ?></span>
+                    <span class="status-badge">
+                        <?php 
+                        $statusLabels = [
+                            'draft' => 'Draft',
+                            'submitted' => 'Pending Review',
+                            'reviewed' => 'Direview',
+                            'approved' => 'Disetujui',
+                            'rejected' => 'Ditolak'
+                        ];
+                        echo $statusLabels[$row['status']] ?? ucfirst($row['status']);
+                        ?>
+                    </span>
                 </div>
             </a>
             <?php endwhile; ?>

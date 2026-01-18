@@ -75,7 +75,7 @@ include '../includes/header.php';
                         <?php 
                         $statusLabels = [
                             'draft' => 'Draft',
-                            'submitted' => 'Disubmit',
+                            'submitted' => 'Pending Review',
                             'reviewed' => 'Direview',
                             'approved' => 'Disetujui',
                             'rejected' => 'Ditolak'
@@ -89,11 +89,6 @@ include '../includes/header.php';
                     <a href="view.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-view" title="Lihat Detail">
                         <i class="fas fa-eye"></i> Lihat
                     </a>
-                    <?php if ($row['status'] === 'draft'): ?>
-                    <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-edit" title="Edit Audit">
-                        <i class="fas fa-edit"></i> Edit
-                    </a>
-                    <?php endif; ?>
                     <a href="delete.php?id=<?php echo $row['id']; ?>" 
                        class="btn btn-sm btn-delete" 
                        onclick="return confirm('Apakah Anda yakin ingin menghapus audit ini?')"

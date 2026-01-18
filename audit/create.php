@@ -323,7 +323,7 @@ function loadTemplate(templateId) {
                             html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">`;
                             html += `<input type="text" name="responses[${item.id}]" placeholder="Masukkan nama vendor" style="width:100%;">`;
                             if (hargaItem) {
-                                html += `<input type="number" name="responses[${hargaItem.id}]" placeholder="Harga (Rp)" style="width:100%;">`;
+                                html += `<input type="number" name="responses[${hargaItem.id}]" placeholder="Harga (Rp)" style="width:100%;border:none;border-bottom:1px solid #dee2e6;border-radius:0;padding:8px 4px;">`;
                             }
                             html += `</div>`;
                             html += `</td>`;
@@ -369,69 +369,79 @@ function loadTemplate(templateId) {
                             html += `<td>`;
                             html += `<div style="display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;">`;
                             html += `<span style="font-weight:500;color:#495057;">Brdsk Qty SPK</span>`;
-                            html += `<input type="number" name="responses[${ket22?.id}]" placeholder="Rp" style="width:100%;">`;
+                            html += `<input type="number" name="responses[${ket22?.id}]" placeholder="Rp" style="width:100%;border:none;border-bottom:1px solid #dee2e6;border-radius:0;padding:8px 4px;">`;
                             html += `</div></td>`;
                         }
-                        // Item 2: Bukti Transfer I - Radio + Tanggal saja
+                        // Item 2: Bukti Transfer I - HANYA Tanggal (tanpa radio)
                         else if (item.item_order === 2) {
                             html += `<td><span class="item-number">2.</span> ${item.item_text}</td>`;
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="ada" class="radio-ada" data-item-id="${item.id}" ${item.is_required ? 'required' : ''}></td>`;
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="tidak_ada" class="radio-tidak-ada" data-item-id="${item.id}"></td>`;
                             const ket23 = section.items.find(i => i.item_order === 23);
-                            html += `<td><input type="date" name="responses[${ket23?.id}]" id="date-${item.id}" class="date-field" data-radio-id="${item.id}" style="width:100%;"></td>`;
+                            html += `<td colspan="3"><input type="date" name="responses[${ket23?.id}]" style="width:100%;" ${item.is_required ? 'required' : ''}></td>`;
                         }
-                        // Item 3: Nilai trasfer I - TANPA NOMOR, Rp saja (tanpa border hitam)
+                        // Item 3: Nilai transfer I - TANPA NOMOR, Rp saja (tanpa border hitam)
                         else if (item.item_order === 3) {
                             html += `<td style="padding-left:30px;">${item.item_text}</td>`;
                             html += `<td colspan="3">`;
                             html += `<input type="number" name="responses[${item.id}]" placeholder="Rp" style="width:100%;border:none;border-bottom:1px solid #dee2e6;border-radius:0;padding:8px 4px;" ${item.is_required ? 'required' : ''}>`;
                             html += `</td>`;
                         }
-                        // Item 4: Info konfirmasi I - TANPA NOMOR, Label + Tanggal (dari item 3)
+                        // Item 4: Info konfirmasi I - TANPA NOMOR, Radio Sesuai/Tidak Sesuai (tanpa kolom tanggal)
                         else if (item.item_order === 4) {
                             html += `<td style="padding-left:30px;">${item.item_text}</td>`;
-                            const date31 = section.items.find(i => i.item_order === 31);
-                            html += `<td colspan="3">`;
-                            html += `<input type="date" name="responses[${date31?.id}]" style="width:100%;">`;
+                            html += `<td colspan="3" style="text-align:center;">`;
+                            html += `<div style="display:flex;gap:30px;justify-content:center;">`;
+                            html += `<label style="display:flex;align-items:center;gap:5px;cursor:pointer;">`;
+                            html += `<input type="radio" name="responses[${item.id}]" value="sesuai">`;
+                            html += `<span>Sesuai</span>`;
+                            html += `</label>`;
+                            html += `<label style="display:flex;align-items:center;gap:5px;cursor:pointer;">`;
+                            html += `<input type="radio" name="responses[${item.id}]" value="tidak_sesuai">`;
+                            html += `<span>Tidak Sesuai</span>`;
+                            html += `</label>`;
+                            html += `</div>`;
                             html += `</td>`;
                         }
-                        // Item 5: Bukti Transfer II (Nomor 3) - Radio Sesuai/Tidak Sesuai + Tanggal
+                        // Item 5: Bukti Transfer II (Nomor 3) - HANYA Tanggal (tanpa radio)
                         else if (item.item_order === 5) {
                             html += `<td><span class="item-number">3.</span> ${item.item_text}</td>`;
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="sesuai" class="radio-ada" data-item-id="${item.id}" ${item.is_required ? 'required' : ''}></td>`;
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="tidak_sesuai" class="radio-tidak-ada" data-item-id="${item.id}"></td>`;
                             const date52 = section.items.find(i => i.item_order === 52);
-                            html += `<td><input type="date" name="responses[${date52?.id}]" id="date-${item.id}" class="date-field" data-radio-id="${item.id}" placeholder="Tanggal" style="width:100%;"></td>`;
+                            html += `<td colspan="3"><input type="date" name="responses[${date52?.id}]" style="width:100%;" ${item.is_required ? 'required' : ''}></td>`;
                         }
-                        // Item 6: Nilai trasfer II - TANPA NOMOR, Rp saja (tanpa border hitam)
+                        // Item 6: Nilai transfer II - TANPA NOMOR, Rp saja (tanpa border hitam)
                         else if (item.item_order === 6) {
                             html += `<td style="padding-left:30px;">${item.item_text}</td>`;
                             html += `<td colspan="3">`;
                             html += `<input type="number" name="responses[${item.id}]" placeholder="Rp" style="width:100%;border:none;border-bottom:1px solid #dee2e6;border-radius:0;padding:8px 4px;" ${item.is_required ? 'required' : ''}>`;
                             html += `</td>`;
                         }
-                        // Item 7: Info konfirmasi II - TANPA NOMOR, Radio Sesuai/Tidak Sesuai
+                        // Item 7: Info konfirmasi II - TANPA NOMOR, Radio Sesuai/Tidak Sesuai (tanpa kolom tanggal)
                         else if (item.item_order === 7) {
                             html += `<td style="padding-left:30px;">${item.item_text}</td>`;
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="sesuai"></td>`;
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="tidak_sesuai"></td>`;
-                            const date61 = section.items.find(i => i.item_order === 61);
-                            html += `<td><input type="date" name="responses[${date61?.id}]" style="width:100%;"></td>`;
+                            html += `<td colspan="3" style="text-align:center;">`;
+                            html += `<div style="display:flex;gap:30px;justify-content:center;">`;
+                            html += `<label style="display:flex;align-items:center;gap:5px;cursor:pointer;">`;
+                            html += `<input type="radio" name="responses[${item.id}]" value="sesuai">`;
+                            html += `<span>Sesuai</span>`;
+                            html += `</label>`;
+                            html += `<label style="display:flex;align-items:center;gap:5px;cursor:pointer;">`;
+                            html += `<input type="radio" name="responses[${item.id}]" value="tidak_sesuai">`;
+                            html += `<span>Tidak Sesuai</span>`;
+                            html += `</label>`;
+                            html += `</div>`;
+                            html += `</td>`;
                         }
-                        // Item 8: Sisa - Nomor 4, Rp saja (tanpa border hitam)
+                        // Item 8: Sisa - Nomor 4, HANYA Rp saja (tanpa radio)
                         else if (item.item_order === 8) {
                             html += `<td><span class="item-number">4.</span> ${item.item_text}</td>`;
                             html += `<td colspan="3">`;
                             html += `<input type="number" name="responses[${item.id}]" placeholder="Rp" style="width:100%;border:none;border-bottom:1px solid #dee2e6;border-radius:0;padding:8px 4px;">`;
                             html += `</td>`;
                         }
-                        // Item 9: Email instruksi - Nomor 5
+                        // Item 9: Email instruksi - Nomor 5, HANYA Tanggal (tanpa radio)
                         else if (item.item_order === 9) {
                             html += `<td><span class="item-number">5.</span> ${item.item_text}</td>`;
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="ada"></td>`;
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="tidak_ada"></td>`;
                             const date91 = section.items.find(i => i.item_order === 91);
-                            html += `<td><input type="date" name="responses[${date91?.id}]" placeholder="Tanggal" style="width:100%;"></td>`;
+                            html += `<td colspan="3"><input type="date" name="responses[${date91?.id}]" placeholder="Tanggal" style="width:100%;"></td>`;
                         }
                     }
                     // Special handling untuk Section 4: Mengeluarkan Barang
@@ -522,9 +532,9 @@ function loadTemplate(templateId) {
                         } else if (item.field_type === 'textarea') {
                             html += `<td colspan="3"><textarea name="responses[${item.id}]" placeholder="Masukkan keterangan" ${item.is_required ? 'required' : ''}></textarea></td>`;
                         } else if (item.field_type === 'checkbox') {
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="ada"></td>`;
-                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="tidak_ada"></td>`;
-                            html += `<td><input type="date" name="responses[${item.id}_date]" style="width:100%;"></td>`;
+                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="ada" class="radio-ada" data-item-id="${item.id}" ${item.is_required ? 'required' : ''}></td>`;
+                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="tidak_ada" class="radio-tidak-ada" data-item-id="${item.id}"></td>`;
+                            html += `<td><input type="date" name="responses_date[${item.id}]" id="date-${item.id}" class="date-field" data-radio-id="${item.id}" style="width:100%;"></td>`;
                         }
                     }
                     

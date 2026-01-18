@@ -10,6 +10,10 @@ config/config.php
 # Utility & Debug Files
 generate_password.php
 clear_session.php
+debug_*.php
+fix_*.php
+test_*.php
+SOLUSI_*.md
 
 # IDE & Editor Files
 .vscode/

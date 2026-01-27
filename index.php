@@ -84,6 +84,7 @@ include 'includes/header.php';
     <!-- Greeting Card -->
     <div class="greeting-card">
         <div class="greeting-content">
+            <div style="font-size: 14px; font-weight: 500; opacity: 0.95; margin-bottom: 10px; letter-spacing: 1.5px; text-transform: uppercase;">Departemen Procurement</div>
             <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
             <p>Kelola semua audit dengan mudah dan efisien</p>
         </div>
@@ -101,7 +102,7 @@ include 'includes/header.php';
         <h3><i class="fas fa-th-large"></i> Menu Utama</h3>
         <div class="menu-grid">
             <a href="audit/select_type.php" class="menu-card">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%); color: #597ef7;">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #fff5f7 0%, #ffd1d9 100%); color: #C41E3A;">
                     <i class="fas fa-plus-circle"></i>
                 </div>
                 <div class="menu-content">
@@ -111,7 +112,7 @@ include 'includes/header.php';
             </a>
             
             <a href="audit/list.php" class="menu-card">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%); color: #597ef7;">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #fff5f7 0%, #ffd1d9 100%); color: #C41E3A;">
                     <i class="fas fa-list-alt"></i>
                 </div>
                 <div class="menu-content">
@@ -121,7 +122,7 @@ include 'includes/header.php';
             </a>
             
             <a href="admin/templates.php" class="menu-card">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%); color: #597ef7;">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #fff5f7 0%, #ffd1d9 100%); color: #C41E3A;">
                     <i class="fas fa-file-alt"></i>
                 </div>
                 <div class="menu-content">
@@ -132,7 +133,7 @@ include 'includes/header.php';
             
             <?php if (isAdmin()): ?>
             <a href="admin/users.php" class="menu-card">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%); color: #597ef7;">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #fff5f7 0%, #ffd1d9 100%); color: #C41E3A;">
                     <i class="fas fa-users"></i>
                 </div>
                 <div class="menu-content">

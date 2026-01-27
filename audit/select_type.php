@@ -156,7 +156,7 @@ include '../includes/header.php';
     left: 0;
     width: 4px;
     height: 100%;
-    background: #597ef7;
+    background: #C41E3A;
     transform: scaleY(0);
     transition: transform 0.3s ease;
 }
@@ -167,8 +167,8 @@ include '../includes/header.php';
 
 .audit-type-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(89, 126, 247, 0.2);
-    border-color: rgba(89, 126, 247, 0.4);
+    box-shadow: 0 8px 24px rgba(196, 30, 58, 0.2);
+    border-color: rgba(196, 30, 58, 0.4);
 }
 
 .audit-type-icon {
@@ -180,8 +180,8 @@ include '../includes/header.php';
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    background: linear-gradient(135deg, #f0f5ff 0%, #d6e4ff 100%);
-    color: #597ef7;
+    background: linear-gradient(135deg, #fff5f7 0%, #ffd1d9 100%);
+    color: #C41E3A;
     transition: all 0.3s ease;
     flex-shrink: 0;
 }

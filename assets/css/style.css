@@ -5,15 +5,15 @@
 }
 
 :root {
-    --primary-color: #3B82F6;
-    --primary-dark: #2563EB;
-    --primary-light: #60A5FA;
+    --primary-color: #C41E3A;
+    --primary-dark: #A01729;
+    --primary-light: #E63946;
     --secondary-color: #64748b;
     --success-color: #10b981;
     --danger-color: #ef4444;
     --warning-color: #f59e0b;
     --sidebar-bg: #f8fafc;
-    --sidebar-hover: #eff6ff;
+    --sidebar-hover: #ffe5e9;
     --light-bg: #ffffff;
     --border-color: #e2e8f0;
     --text-color: #1e293b;
@@ -76,6 +76,15 @@ body {
 .sidebar-brand .brand-text {
     display: flex;
     flex-direction: column;
+}
+
+.sidebar-brand .brand-department {
+    font-size: 10px;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    margin-bottom: 6px;
 }
 
 .sidebar-brand h2 {
@@ -250,7 +259,7 @@ body {
     font-size: 32px;
     font-weight: 700;
     margin-bottom: 8px;
-    color: #0f172a;
+    color: #ffffff !important;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -258,12 +267,12 @@ body {
 
 .greeting-content h1 i {
     font-size: 28px;
-    color: #0f172a;
+    color: #ffffff;
 }
 
 .greeting-content p {
     font-size: 16px;
-    color: #1e293b;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0;
 }
 
@@ -358,7 +367,7 @@ body {
     left: 0;
     width: 4px;
     height: 100%;
-    background: #597ef7;
+    background: #C41E3A;
     transform: scaleY(0);
     transition: transform 0.3s ease;
 }
@@ -369,8 +378,8 @@ body {
 
 .menu-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(89, 126, 247, 0.2);
-    border-color: rgba(89, 126, 247, 0.4);
+    box-shadow: 0 8px 24px rgba(196, 30, 58, 0.2);
+    border-color: rgba(196, 30, 58, 0.4);
 }
 
 .menu-card .menu-icon {
@@ -481,7 +490,7 @@ body {
 
 .aktivitas-item:hover {
     background: var(--light-bg);
-    border-color: rgba(89, 126, 247, 0.3);
+    border-color: rgba(196, 30, 58, 0.3);
     transform: translateX(4px);
 }
 
@@ -662,14 +671,14 @@ body {
 }
 
 .btn-view {
-    background: #f0f5ff;
-    color: #597ef7;
-    border: 1px solid #d6e4ff;
+    background: #fff5f7;
+    color: #C41E3A;
+    border: 1px solid #ffd1d9;
 }
 
 .btn-view:hover {
-    background: #d6e4ff;
-    color: #2f54eb;
+    background: #ffd1d9;
+    color: #A01729;
 }
 
 .btn-edit {
@@ -725,7 +734,7 @@ body {
 .form-control:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(50, 108, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
 }
 
 .form-row {
@@ -854,8 +863,8 @@ textarea.form-control {
 }
 
 .badge-submitted {
-    background: #dbeafe;
-    color: #1e40af;
+    background: #ffd1d9;
+    color: #A01729;
 }
 
 .badge-reviewed {
@@ -1198,7 +1207,7 @@ textarea.form-control {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #C41E3A 0%, #A01729 100%);
     position: relative;
     overflow: hidden;
 }
@@ -1249,7 +1258,7 @@ textarea.form-control {
     left: 0;
     right: 0;
     height: 5px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #C41E3A 0%, #A01729 100%);
     border-radius: 20px 20px 0 0;
 }
 
@@ -1270,7 +1279,7 @@ textarea.form-control {
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
     font-size: 32px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #C41E3A 0%, #A01729 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -1312,13 +1321,13 @@ textarea.form-control {
     outline: none;
     border-color: var(--primary-color);
     background: white;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 4px rgba(196, 30, 58, 0.1);
 }
 
 .login-box .btn-primary {
     width: 100%;
     padding: 14px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #C41E3A 0%, #A01729 100%);
     color: white;
     border: none;
     border-radius: 10px;
@@ -1348,7 +1357,7 @@ textarea.form-control {
 
 .login-box .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 10px 25px rgba(196, 30, 58, 0.4);
 }
 
 .login-box .btn-primary:active {
@@ -1372,7 +1381,7 @@ textarea.form-control {
     color: var(--primary-color);
     font-weight: 600;
     padding: 2px 8px;
-    background: #eff6ff;
+    background: #fff5f7;
     border-radius: 4px;
     font-family: 'Courier New', monospace;
 }

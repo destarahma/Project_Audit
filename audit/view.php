@@ -174,6 +174,7 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
 
 <div class="card excel-form">
     <div class="excel-header">
+        <div style="font-size: 13px; opacity: 0.85; margin-bottom: 8px; letter-spacing: 1px;">Departemen Procurement</div>
         <h2><?php echo htmlspecialchars($submission['template_name']); ?></h2>
         <div style="margin-top: 10px; font-size: 14px; opacity: 0.9;">
             Nomor: <?php 
@@ -253,7 +254,7 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
                     
                     // Determine approval level and badge
                     if ($totalPrice < 50000000) {
-                        $badgeClass = 'badge-blue';
+                        $badgeClass = 'badge-red';
                         $level = 'UNIT (< Rp 50 JT)';
                     } elseif ($totalPrice <= 300000000) {
                         $badgeClass = 'badge-yellow';

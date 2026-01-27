@@ -228,9 +228,9 @@ include '../includes/header.php';
     </form>
     
     <?php if (!empty($searchQuery)): ?>
-    <div style="margin-top: 15px; padding: 12px; background: #f0f9ff; border-radius: 6px; border-left: 4px solid #3B82F6;">
-        <i class="fas fa-search" style="color: #3B82F6;"></i>
-        <span style="font-weight: 500; color: #1e40af;">Hasil pencarian untuk: "<?php echo htmlspecialchars($searchQuery); ?>"</span>
+    <div style="margin-top: 15px; padding: 12px; background: #fff5f7; border-radius: 6px; border-left: 4px solid #C41E3A;">
+        <i class="fas fa-search" style="color: #C41E3A;"></i>
+        <span style="font-weight: 500; color: #A01729;">Hasil pencarian untuk: "<?php echo htmlspecialchars($searchQuery); ?>"</span>
     </div>
     <?php endif; ?>
 </div>
@@ -308,11 +308,11 @@ include '../includes/header.php';
     
     <!-- Filter Counter -->
     <?php if (!empty($filterTemplate) || !empty($filterStatus) || !empty($filterDateFrom) || !empty($filterDateTo)): ?>
-    <div style="margin-top: 15px; padding: 12px; background: white; border-radius: 6px; border-left: 4px solid #3B82F6;">
-        <i class="fas fa-info-circle" style="color: #3B82F6;"></i>
+    <div style="margin-top: 15px; padding: 12px; background: white; border-radius: 6px; border-left: 4px solid #C41E3A;">
+        <i class="fas fa-info-circle" style="color: #C41E3A;"></i>
         <span style="font-weight: 500;">Menampilkan <?php echo $totalFilteredCount; ?> dari <?php echo $totalCount; ?> audit</span>
         <?php if (!empty($filterTemplate)): ?>
-        <span class="badge" style="background: #3B82F6; color: white; margin-left: 10px;">
+        <span class="badge" style="background: #C41E3A; color: white; margin-left: 10px;">
             Template: <?php echo htmlspecialchars($filterTemplate); ?>
         </span>
         <?php endif; ?>
@@ -363,7 +363,7 @@ foreach ($templateOrder as $templateName):
     if ($isFilterActive && $auditCount === 0) continue;
 ?>
 <div class="card" style="margin-bottom: 30px;">
-    <h3 style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; padding: 15px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0; font-size: 18px;">
+    <h3 style="background: linear-gradient(135deg, #C41E3A 0%, #A01729 100%); color: white; padding: 15px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0; font-size: 18px;">
         <i class="fas fa-folder-open"></i> <?php echo htmlspecialchars($templateName); ?>
         <span style="background: rgba(255,255,255,0.2); padding: 3px 12px; border-radius: 12px; font-size: 14px; margin-left: 10px;">
             <?php echo $auditCount; ?> audit
@@ -389,7 +389,7 @@ foreach ($templateOrder as $templateName):
             foreach ($submissions as $row): 
             ?>
             <tr>
-                <td style="font-weight: 600; color: #3B82F6;"><?php 
+                <td style="font-weight: 600; color: #C41E3A;"><?php 
                 // Bersihkan template_code dari suffix _001 atau _nnn
                 $shortCode = preg_replace('/_\d{3}$/', '', $row['template_code']);
                 echo htmlspecialchars($shortCode) . '-' . str_pad($row['audit_number'], 5, '0', STR_PAD_LEFT); 

@@ -17,6 +17,7 @@
                     <i class="fas fa-clipboard-check"></i>
                 </div>
                 <div class="brand-text">
+                    <div class="brand-department">Departemen Procurement</div>
                     <h2>AUDIT</h2>
                     <span class="brand-subtitle">Management Digital</span>
                 </div>

@@ -3,18 +3,18 @@
 .excel-form {
     background: white;
     padding: 0;
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 4px 20px rgba(196, 30, 58, 0.1);
     border-radius: 16px;
     overflow: hidden;
 }
 
 .excel-header {
-    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    background: linear-gradient(135deg, #C41E3A 0%, #A01729 100%);
     color: white;
     padding: 24px;
     text-align: center;
     border-bottom: none;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4px 12px rgba(196, 30, 58, 0.2);
 }
 
 .excel-header h2 {
@@ -43,7 +43,7 @@
 .excel-info-table td:first-child {
     width: 200px;
     font-weight: 600;
-    background: linear-gradient(135deg, #f1f5f9 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, #fff5f7 0%, #ffe9ed 100%);
     color: #495057;
 }
 
@@ -59,9 +59,9 @@
 
 .excel-info-table input[type="text"]:focus,
 .excel-info-table input[type="date"]:focus {
-    border-color: #3B82F6;
+    border-color: #C41E3A;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
 }
 
 .excel-section {
@@ -72,7 +72,7 @@
 }
 
 .excel-section-header {
-    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    background: linear-gradient(135deg, #C41E3A 0%, #A01729 100%);
     color: white;
     padding: 14px 18px;
     font-size: 14px;
@@ -122,7 +122,7 @@
     display: inline-block;
     min-width: 24px;
     font-weight: 600;
-    color: #3B82F6;
+    color: #C41E3A;
 }
 
 .excel-table input[type="radio"] {
@@ -142,8 +142,8 @@
 }
 
 .excel-table input[type="radio"]:checked {
-    background: #3B82F6;
-    border-color: #3B82F6;
+    background: #C41E3A;
+    border-color: #C41E3A;
 }
 
 .excel-table input[type="radio"]:checked::after {
@@ -159,8 +159,8 @@
 }
 
 .excel-table input[type="radio"]:hover {
-    border-color: #2563EB;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #A01729;
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
 }
 
 .excel-table input[type="checkbox"] {
@@ -169,20 +169,20 @@
     cursor: pointer;
     margin: 0 auto;
     display: block;
-    accent-color: #3B82F6;
+    accent-color: #C41E3A;
     border-radius: 50%;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    border: 2px solid #3B82F6;
+    border: 2px solid #C41E3A;
     background: white;
     position: relative;
     transition: all 0.2s ease;
 }
 
 .excel-table input[type="checkbox"]:checked {
-    background: #3B82F6;
-    border-color: #3B82F6;
+    background: #C41E3A;
+    border-color: #C41E3A;
 }
 
 .excel-table input[type="checkbox"]:checked::after {
@@ -197,8 +197,8 @@
 }
 
 .excel-table input[type="checkbox"]:hover {
-    border-color: #2563EB;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #A01729;
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
 }
 
 .excel-table input[type="text"],
@@ -216,9 +216,9 @@
 .excel-table input[type="text"]:focus,
 .excel-table input[type="date"]:focus,
 .excel-table textarea:focus {
-    border-color: #3B82F6;
+    border-color: #C41E3A;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
 }
 
 .excel-table textarea {
@@ -334,7 +334,7 @@
 }
 
 .excel-score-card {
-    background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+    background: linear-gradient(135deg, #C41E3A 0%, #E63946 100%);
     color: white;
     padding: 24px;
     margin: 24px 0;
@@ -343,7 +343,7 @@
     justify-content: space-around;
     align-items: center;
     text-align: center;
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 8px 24px rgba(196, 30, 58, 0.25);
 }
 
 .excel-score-item {
@@ -368,7 +368,7 @@
     display: inline-block;
     padding: 10px 24px;
     background: white;
-    color: #3B82F6;
+    color: #C41E3A;
     border-radius: 24px;
     font-weight: 700;
     font-size: 14px;
@@ -457,12 +457,12 @@
 
 /* Approval Note */
 .approval-note {
-    background: linear-gradient(135deg, #e7f3ff 0%, #d9ebff 100%);
-    border: 2px solid #2196F3;
+    background: linear-gradient(135deg, #ffe5e9 0%, #ffd1d9 100%);
+    border: 2px solid #C41E3A;
     border-radius: 12px;
     padding: 16px;
     margin-top: 15px;
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+    box-shadow: 0 4px 12px rgba(196, 30, 58, 0.15);
 }
 
 .approval-note-warning {
@@ -474,7 +474,7 @@
 .approval-note strong {
     display: block;
     margin-bottom: 8px;
-    color: #1565c0;
+    color: #A01729;
     font-size: 14px;
 }
 
@@ -509,7 +509,7 @@
 }
 
 .validation-header {
-    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    background: linear-gradient(135deg, #C41E3A 0%, #A01729 100%);
     color: white;
     padding: 18px 24px;
 }
@@ -569,8 +569,8 @@
 }
 
 .approval-level.badge-blue {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: #ffd1d9;
+    color: #A01729;
 }
 
 .approval-level.badge-yellow {
@@ -579,8 +579,8 @@
 }
 
 .approval-level.badge-red {
-    background: #f8d7da;
-    color: #721c24;
+    background: #ffd1d9;
+    color: #A01729;
 }
 
 /* Additional styles for PO Tagging OA template */
@@ -596,9 +596,9 @@
 
 .excel-info-table input[type="number"]:focus,
 .excel-table input[type="number"]:focus {
-    border-color: #3B82F6;
+    border-color: #C41E3A;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
 }
 
 .excel-table tbody td input[type="text"],

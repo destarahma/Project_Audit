@@ -19,7 +19,7 @@ include '../includes/header.php';
 </div>
 
 <div class="card" style="text-align: center; padding: 60px 40px;">
-    <i class="fas fa-info-circle" style="font-size: 64px; color: #3B82F6; margin-bottom: 20px;"></i>
+    <i class="fas fa-info-circle" style="font-size: 64px; color: #C41E3A; margin-bottom: 20px;"></i>
     <h3 style="color: #1e293b; margin-bottom: 15px;">Fitur Dalam Pengembangan</h3>
     <p style="color: #64748b; margin-bottom: 25px; font-size: 15px;">
         Fitur untuk membuat template audit baru dari awal sedang dalam tahap pengembangan.<br>
@@ -27,8 +27,8 @@ include '../includes/header.php';
         kemudian melakukan modifikasi sesuai kebutuhan.
     </p>
     
-    <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: left;">
-        <h4 style="color: #0369a1; margin-bottom: 15px;">
+    <div style="background: #fff5f7; border: 1px solid #ffd1d9; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: left;">
+        <h4 style="color: #C41E3A; margin-bottom: 15px;">
             <i class="fas fa-lightbulb"></i> Alternatif: Gunakan Copy Template
         </h4>
         <ol style="color: #475569; line-height: 1.8;">
@@ -63,7 +63,7 @@ include '../includes/header.php';
         while ($row = $templates->fetch_assoc()):
         ?>
         <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: white;">
-            <h4 style="color: #3B82F6; margin-bottom: 10px; font-size: 16px;">
+            <h4 style="color: #C41E3A; margin-bottom: 10px; font-size: 16px;">
                 <?php echo htmlspecialchars($row['template_name']); ?>
             </h4>
             <p style="color: #64748b; font-size: 14px; margin-bottom: 15px;">

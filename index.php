@@ -7,31 +7,73 @@ requireLogin();
 
 $pageTitle = 'Dashboard - ' . SITE_NAME;
 
+// Get current user
+$currentUser = getCurrentUser();
+$isAdmin = isAdmin();
+
 // Get statistics
 $conn = getConnection();
 
-// Total submissions
-$result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions");
-$totalSubmissions = $result->fetch_assoc()['total'];
+// Filter berdasarkan role: admin melihat semua, auditor hanya punya sendiri
+if ($isAdmin) {
+    // Total submissions (admin: semua)
+    $result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions");
+    $totalSubmissions = $result->fetch_assoc()['total'];
 
-// Approved submissions
-$result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'approved'");
-$approvedSubmissions = $result->fetch_assoc()['total'];
+    // Approved submissions (admin: semua)
+    $result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'approved'");
+    $approvedSubmissions = $result->fetch_assoc()['total'];
 
-// Submitted (pending review) submissions
-$result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'submitted'");
-$submittedSubmissions = $result->fetch_assoc()['total'];
+    // Submitted (pending review) submissions (admin: semua)
+    $result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'submitted'");
+    $submittedSubmissions = $result->fetch_assoc()['total'];
 
-// Recent submissions
-$stmt = $conn->prepare("
-    SELECT s.*, t.template_name 
-    FROM audit_submissions s 
-    JOIN audit_templates t ON s.template_id = t.id 
-    ORDER BY s.created_at DESC 
-    LIMIT 5
-");
-$stmt->execute();
-$recentSubmissions = $stmt->get_result();
+    // Recent submissions (admin: semua)
+    $stmt = $conn->prepare("
+        SELECT s.*, t.template_name, u.full_name as auditor_name
+        FROM audit_submissions s 
+        JOIN audit_templates t ON s.template_id = t.id 
+        JOIN users u ON s.submitted_by = u.id
+        ORDER BY s.created_at DESC 
+        LIMIT 5
+    ");
+    $stmt->execute();
+    $recentSubmissions = $stmt->get_result();
+} else {
+    // Total submissions (auditor/viewer: hanya punya sendiri)
+    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM audit_submissions WHERE submitted_by = ?");
+    $stmt->bind_param("i", $currentUser['id']);
+    $stmt->execute();
+    $totalSubmissions = $stmt->get_result()->fetch_assoc()['total'];
+    $stmt->close();
+
+    // Approved submissions (auditor/viewer: hanya punya sendiri)
+    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM audit_submissions WHERE submitted_by = ? AND status = 'approved'");
+    $stmt->bind_param("i", $currentUser['id']);
+    $stmt->execute();
+    $approvedSubmissions = $stmt->get_result()->fetch_assoc()['total'];
+    $stmt->close();
+
+    // Submitted (pending review) submissions (auditor/viewer: hanya punya sendiri)
+    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM audit_submissions WHERE submitted_by = ? AND status = 'submitted'");
+    $stmt->bind_param("i", $currentUser['id']);
+    $stmt->execute();
+    $submittedSubmissions = $stmt->get_result()->fetch_assoc()['total'];
+    $stmt->close();
+
+    // Recent submissions (auditor/viewer: hanya punya sendiri)
+    $stmt = $conn->prepare("
+        SELECT s.*, t.template_name 
+        FROM audit_submissions s 
+        JOIN audit_templates t ON s.template_id = t.id 
+        WHERE s.submitted_by = ?
+        ORDER BY s.created_at DESC 
+        LIMIT 5
+    ");
+    $stmt->bind_param("i", $currentUser['id']);
+    $stmt->execute();
+    $recentSubmissions = $stmt->get_result();
+}
 
 $conn->close();
 
@@ -118,7 +160,14 @@ include 'includes/header.php';
                 </div>
                 <div class="aktivitas-content">
                     <h4><?php echo htmlspecialchars($row['template_name']); ?></h4>
-                    <p><i class="far fa-calendar"></i> <?php echo formatDate($row['submission_date']); ?></p>
+                    <p>
+                        <i class="far fa-calendar"></i> <?php echo formatDate($row['submission_date']); ?>
+                        <?php if ($isAdmin && isset($row['auditor_name'])): ?>
+                        <span style="margin-left: 10px; color: #64748b;">
+                            <i class="fas fa-user"></i> <?php echo htmlspecialchars($row['auditor_name']); ?>
+                        </span>
+                        <?php endif; ?>
+                    </p>
                 </div>
                 <div class="aktivitas-amount">
                     <span class="amount <?php echo $row['status'] === 'approved' ? 'success' : ($row['status'] === 'rejected' ? 'danger' : ''); ?>">

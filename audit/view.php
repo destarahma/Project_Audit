@@ -12,6 +12,26 @@ function cleanRupiah($value) {
     return floatval($cleaned);
 }
 
+// Function to format number untuk display (terima string dengan titik sebagai thousand separator)
+function formatHarga($value) {
+    if (empty($value)) return '-';
+    
+    // Kalau sudah ada "Rp", return as is
+    if (stripos($value, 'Rp') !== false) {
+        return $value;
+    }
+    
+    // Remove dots and parse to number
+    $cleaned = str_replace('.', '', $value);
+    $number = floatval($cleaned);
+    
+    if ($number > 0) {
+        return 'Rp ' . number_format($number, 0, ',', '.');
+    }
+    
+    return '-';
+}
+
 if (!isset($_GET['id'])) {
     redirect('audit/list.php');
 }
@@ -67,6 +87,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 $sections = [];
+$allItems = []; // Store all items indexed by item_id for easy lookup
 while ($row = $result->fetch_assoc()) {
     $sectionId = $row['section_id'];
     if (!isset($sections[$sectionId])) {
@@ -77,6 +98,7 @@ while ($row = $result->fetch_assoc()) {
         ];
     }
     $sections[$sectionId]['items'][] = $row;
+    $allItems[$row['item_id']] = $row;
 }
 
 $conn->close();
@@ -154,7 +176,11 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
     <div class="excel-header">
         <h2><?php echo htmlspecialchars($submission['template_name']); ?></h2>
         <div style="margin-top: 10px; font-size: 14px; opacity: 0.9;">
-            Nomor: AUD-<?php echo str_pad($submission['id'], 5, '0', STR_PAD_LEFT); ?> | 
+            Nomor: <?php 
+            // Bersihkan template_code dari suffix _001 atau _nnn
+            $shortCode = preg_replace('/_\d{3}$/', '', $submission['template_code']);
+            echo htmlspecialchars($shortCode) . '-' . str_pad($submission['audit_number'], 5, '0', STR_PAD_LEFT); 
+            ?> | 
             Status: <?php 
             $statusLabels = [
                 'draft' => 'Draft',
@@ -169,43 +195,33 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
     </div>
     
     <!-- Score Card -->
-    <?php if ($submission['total_score'] > 0 || $submission['percentage_score'] > 0): ?>
+    <?php if ($submission['percentage_score'] > 0): ?>
     <div class="excel-score-card">
-        <div class="excel-score-item">
-            <div class="excel-score-label">TOTAL SKOR</div>
-            <div class="excel-score-value"><?php echo $submission['total_score']; ?> / <?php echo $submission['max_score']; ?></div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:5px;">
-                (Compliance Checklist Score)
-            </div>
-        </div>
-        <div class="excel-score-item">
-            <div class="excel-score-label">PERSENTASE</div>
-            <div class="excel-score-value"><?php echo number_format($submission['percentage_score'], 1); ?>%</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:5px;">
-                (Item Completion Rate)
-            </div>
-        </div>
         <div class="excel-score-item">
             <div class="excel-score-label">STATUS AUDIT</div>
             <?php 
-            // Status berdasarkan business logic, bukan hanya persentase
+            // Gunakan status dari business logic yang sudah diperbaiki
+            $statusData = $bl->calculateAuditStatus($submissionId);
+            $displayStatus = $statusData['status'];
+            
+            // Mapping status ke class CSS
+            $statusClassMap = [
+                'Lengkap' => 'status-approved',
+                'Compliant' => 'status-approved',
+                'Sangat Baik' => 'status-approved',
+                'Baik' => 'status-baik',
+                'Perlu Dilengkapi' => 'status-warning',
+                'Cukup' => 'status-cukup',
+                'Dalam Proses' => 'status-cukup',
+                'Perlu Perbaikan' => 'status-warning'
+            ];
+            
+            $statusClass = $statusClassMap[$displayStatus] ?? 'status-cukup';
+            
+            // Additional validation untuk Mix Oil
             $isBusinessValid = $businessValidation && 
                                $businessValidation['dp_valid'] && 
                                $businessValidation['payment_complete'];
-            
-            if ($isBusinessValid) {
-                $displayStatus = 'APPROVED';
-                $statusClass = 'status-approved';
-            } elseif ($submission['percentage_score'] >= 80) {
-                $displayStatus = 'Baik - Perlu Review';
-                $statusClass = 'status-baik';
-            } elseif ($submission['percentage_score'] >= 60) {
-                $displayStatus = 'Cukup';
-                $statusClass = 'status-cukup';
-            } else {
-                $displayStatus = 'Perlu Perbaikan';
-                $statusClass = 'status-perlu-perbaikan';
-            }
             ?>
             <div class="excel-score-status <?php echo $statusClass; ?>"><?php echo $displayStatus; ?></div>
             <?php if ($isBusinessValid): ?>
@@ -516,13 +532,102 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
     <?php endif; ?>
     
     <!-- Info Table -->
+    <?php if ($submission['template_id'] == 9 || $submission['template_id'] == 10): ?>
+    <!-- PO Tagging OA / PO Non OA: Get info from first section responses -->
+    <table class="excel-info-table">
+        <tr>
+            <td>Auditor</td>
+            <td colspan="3"><?php echo htmlspecialchars($submission['auditor_name']); ?></td>
+        </tr>
+        <?php
+        // Get data from section 1 (Informasi PO)
+        $infoSection = null;
+        foreach ($sections as $sec) {
+            if ($sec['section_order'] == 1) {
+                $infoSection = $sec;
+                break;
+            }
+        }
+        
+        if ($infoSection) {
+            $infoData = [];
+            foreach ($infoSection['items'] as $item) {
+                $infoData[$item['item_order']] = $item['response_value'] ?? '';
+            }
+            
+            // Display info based on item_order
+            if (!empty($infoData[1])) {
+                echo '<tr><td>' . ($submission['template_id'] == 9 ? 'Pembelian PO tagging OA' : 'Pembelian PO Non OA') . '</td>';
+                echo '<td colspan="3">' . htmlspecialchars($infoData[1]) . '</td></tr>';
+            }
+            if (!empty($infoData[2])) {
+                echo '<tr><td>Tanggal</td>';
+                echo '<td colspan="3">' . formatDate($infoData[2]) . '</td></tr>';
+            }
+            if (!empty($infoData[3])) {
+                echo '<tr><td>Deskripsi</td>';
+                echo '<td colspan="3">' . nl2br(htmlspecialchars($infoData[3])) . '</td></tr>';
+            }
+            
+            $qty = $infoData[4] ?? '';
+            $hargaSatuan = $infoData[5] ?? '';
+            $totalHargaRaw = $infoData[6] ?? '';
+            
+            // Clean harga satuan - remove dots and non-numeric chars except digits
+            if (!empty($hargaSatuan)) {
+                $hargaSatuanClean = preg_replace('/[^0-9]/', '', $hargaSatuan);
+            } else {
+                $hargaSatuanClean = '';
+            }
+            
+            // Parse Total Harga jika berbentuk "Rp 5.000.000"
+            if (!empty($totalHargaRaw)) {
+                // Remove "Rp" and all non-numeric characters except digits
+                $totalHarga = preg_replace('/[^0-9]/', '', $totalHargaRaw);
+            } else if (!empty($qty) && !empty($hargaSatuanClean)) {
+                // Kalau total harga kosong, hitung otomatis dari qty × harga satuan
+                $totalHarga = floatval($qty) * floatval($hargaSatuanClean);
+            } else {
+                $totalHarga = '';
+            }
+            
+            if (!empty($qty) || !empty($hargaSatuan)) {
+                echo '<tr>';
+                echo '<td>Qty</td>';
+                echo '<td>' . htmlspecialchars($qty ?: '-') . '</td>';
+                echo '<td width="120"><strong>Harga Satuan</strong></td>';
+                echo '<td><strong>Rp ' . (!empty($hargaSatuanClean) ? number_format(floatval($hargaSatuanClean), 0, ',', '.') : '-') . '</strong></td>';
+                echo '</tr>';
+            }
+            
+            // Tampilkan Total Harga (selalu tampilkan jika ada data)
+            if (!empty($totalHarga)) {
+                echo '<tr><td><strong>Total Harga</strong></td>';
+                echo '<td colspan="3"><strong>Rp ' . number_format(floatval($totalHarga), 0, ',', '.') . '</strong></td></tr>';
+            }
+        }
+        ?>
+    </table>
+    <?php else: ?>
+    <!-- Template lainnya (Mix Oil, Barbes, Jual Aset) -->
     <table class="excel-info-table">
         <tr>
             <td>Auditor</td>
             <td colspan="3"><?php echo htmlspecialchars($submission['auditor_name']); ?></td>
         </tr>
         <tr>
-            <td>Penjualan Mix Oil</td>
+            <td><?php 
+                // Dynamic label based on template
+                if ($submission['template_id'] == 1) {
+                    echo 'Penjualan Mix Oil';
+                } elseif ($submission['template_id'] == 5) {
+                    echo 'Self Audit : Barbes';
+                } elseif ($submission['template_id'] == 6) {
+                    echo 'Self Audit : Jual Aset';
+                } else {
+                    echo 'Nama Item';
+                }
+            ?></td>
             <td colspan="3"><?php echo htmlspecialchars($submission['seller_name'] ?: '-'); ?></td>
         </tr>
         <tr>
@@ -559,116 +664,1336 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
         </tr>
         <?php endif; ?>
     </table>
+    <?php endif; ?>
     
     <!-- Checklist Results -->
-    <?php foreach ($sections as $section): ?>
+    <?php 
+    // Function to render items based on template type
+    function renderTemplateItems($templateId, $sections, $submission) {
+        foreach ($sections as $section):
+            // Skip section 1 untuk PO Tagging OA dan PO Non OA (sudah di info table)
+            if (($templateId == 9 || $templateId == 10) && $section['section_order'] == 1) {
+                continue;
+            }
+    ?>
     <div class="excel-section">
         <h3 class="excel-section-header"><?php echo htmlspecialchars($section['section_title']); ?></h3>
         
-        <table class="excel-table">
-            <thead>
-                <tr>
-                    <th width="45%">Item</th>
-                    <th width="10%">Bobot</th>
-                    <th width="15%">Ada</th>
-                    <th width="15%">Tidak ada</th>
-                    <th width="15%">Tanggal</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php 
-                $displayOrder = 1;
-                foreach ($section['items'] as $item): 
-                    // Skip items dengan order > 10 (ini adalah field tanggal/harga tambahan)
-                    if ($item['item_order'] >= 10 && $item['item_order'] < 100) {
-                        continue;
-                    }
+        <?php if ($section['section_order'] == 6): ?>
+            <!-- Section 6: Dokumentasi (khusus tanpa tabel) -->
+            <div style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+                <?php foreach ($section['items'] as $item): ?>
+                    <p style="margin: 0; font-size: 14px; color: #495057;"><?php echo htmlspecialchars($item['item_text']); ?></p>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <table class="excel-table">
+                <thead>
+                    <tr>
+                        <?php if ($templateId == 10 && $section['section_order'] == 4): ?>
+                            <!-- Header khusus untuk PO Non OA Section 4 -->
+                            <th width="60%">Item</th>
+                            <th width="20%">Sesuai</th>
+                            <th width="20%">Tidak</th>
+                        <?php else: ?>
+                            <!-- Header standar -->
+                            <th width="50%">Item</th>
+                            <th width="15%">Ada</th>
+                            <th width="15%">Tidak ada</th>
+                            <th width="20%">Tanggal</th>
+                        <?php endif; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $displayOrder = 1;
                     
-                    // Skip textarea (item_order >= 100)
-                    if ($item['item_order'] >= 100) {
-                        continue;
+                    // Render berdasarkan template
+                    if ($templateId == 9) {
+                        // PO TAGGING OA
+                        renderPOTaggingItems($section, $displayOrder);
+                    } else if ($templateId == 10) {
+                        // PO NON OA
+                        renderPONonOAItems($section, $displayOrder);
+                    } else if ($templateId == 1) {
+                        // MIX OIL
+                        renderMixOilItems($section, $displayOrder);
+                    } else if ($templateId == 5) {
+                        // BARBES
+                        renderBarbesItems($section, $displayOrder);
+                    } else if ($templateId == 6) {
+                        // JUAL ASET
+                        renderJualAsetItems($section, $displayOrder);
                     }
-                    
-                    // Cari tanggal yang sesuai untuk item ini (jika ada)
-                    $dateValue = '';
-                    foreach ($section['items'] as $dateItem) {
-                        if ($dateItem['item_order'] == ($item['item_order'] * 10 + 1) && $dateItem['field_type'] == 'date') {
-                            $dateValue = $dateItem['response_value'];
+                    ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+        
+        <?php if ($section['section_order'] == 2 && $templateId == 1): ?>
+        <div class="excel-note">Note: dikirim ke Kaber jika Mix Oil yg akan dijual masuk area Kaber</div>
+        <?php endif; ?>
+    </div>
+    <?php 
+        endforeach;
+    }
+    
+    // RENDER FUNCTION UNTUK PO TAGGING OA/NON OA
+    function renderPOTaggingItems($section, &$displayOrder) {
+        $items = $section['items'];
+        
+        // Section 2: Pengurusan Pembelian
+        if ($section['section_order'] == 2) {
+            $labels = ['RAP', 'Approval RAP', 'Drawing / Layout', 'PR fully approved'];
+            $baseOrders = [1, 4, 7, 10]; // item_order untuk Ada
+            
+            foreach ($labels as $idx => $label) {
+                $baseOrder = $baseOrders[$idx];
+                $adaItem = null;
+                $tidakItem = null;
+                $dateItem = null;
+                
+                foreach ($items as $item) {
+                    if ($item['item_order'] == $baseOrder) $adaItem = $item;
+                    if ($item['item_order'] == $baseOrder + 1) $tidakItem = $item;
+                    if ($item['item_order'] == $baseOrder + 2) $dateItem = $item;
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($label) . '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($adaItem && isset($adaItem['response_value']) && $adaItem['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($tidakItem && isset($tidakItem['response_value']) && $tidakItem['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+        }
+        // Section 3: PO
+        else if ($section['section_order'] == 3) {
+            // Items 1-6: Berdasarkan item_text, dengan pola: Sesuai, Tidak, Tanggal
+            $labels = ['Cek DD', 'Cek kondisi Vendor', 'Cek material/item', 'Cek payment term', 'Cek harga', 'Cek qty'];
+            
+            foreach ($labels as $idx => $label) {
+                // Cari item berdasarkan item_text
+                $sesuaiItem = null;
+                $tidakItem = null;
+                $dateItem = null;
+                
+                foreach ($items as $item) {
+                    if (stripos($item['item_text'], $label . ' - Sesuai') !== false) {
+                        $sesuaiItem = $item;
+                    }
+                    if (stripos($item['item_text'], $label . ' - Tidak') !== false) {
+                        $tidakItem = $item;
+                    }
+                    if (stripos($item['item_text'], $label . ' - Tanggal') !== false) {
+                        $dateItem = $item;
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($label) . '</td>';
+                echo '<td class="excel-cell-center">';
+                // Cek apakah ada response dengan value 'ada' atau 'sesuai'
+                if ($sesuaiItem && isset($sesuaiItem['response_value']) && ($sesuaiItem['response_value'] == 'ada' || $sesuaiItem['response_value'] == 'sesuai')) {
+                    echo '<span class="excel-result-check yes">✓</span>';
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                // Cek apakah ada response dengan value 'tidak_ada' atau 'tidak'
+                if ($tidakItem && isset($tidakItem['response_value']) && ($tidakItem['response_value'] == 'tidak_ada' || $tidakItem['response_value'] == 'tidak')) {
+                    echo '<span class="excel-result-check no">✗</span>';
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                // Tampilkan tanggal dari field tanggal
+                echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            
+            // Items 7-8: Textarea (Input note pembelian PO, Kirim PO)
+            $textareaLabels = ['Input note pembelian PO', 'Kirim PO'];
+            
+            foreach ($textareaLabels as $textLabel) {
+                $textItem = null;
+                foreach ($items as $item) {
+                    if ($item['field_type'] == 'textarea' && stripos($item['item_text'], $textLabel) !== false) {
+                        $textItem = $item;
+                        break;
+                    }
+                }
+                
+                if ($textItem) {
+                    echo '<tr>';
+                    echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($textLabel) . '</td>';
+                    echo '<td colspan="3" class="excel-result-text">';
+                    echo (isset($textItem['response_value']) && $textItem['response_value']) ? nl2br(htmlspecialchars($textItem['response_value'])) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+            }
+        }
+    }
+    
+    // RENDER FUNCTION UNTUK MIX OIL
+    function renderMixOilItems($section, &$displayOrder) {
+        $items = $section['items'];
+        $processed = [];
+        
+        foreach ($items as $item) {
+            if (in_array($item['item_id'], $processed)) continue;
+            
+            // Skip related items untuk section selain 3, 4, 5
+            // Section 3, 4, 5 punya struktur berbeda dengan pola item_order * 10 + 1 untuk related items
+            if (!in_array($section['section_order'], [3, 4, 5])) {
+                // Skip harga: 11,21,31 dan tanggal: 51,61,71,81,91,101
+                if ($item['item_order'] > 10) continue;
+                // Skip date/number kecuali item 7 (Periode QCF)
+                if (($item['field_type'] == 'date' || $item['field_type'] == 'number') && $item['item_order'] != 7) continue;
+            } else {
+                // Untuk Section 3, 4, 5: skip item dengan order > 10, kecuali untuk Section 5
+                if ($section['section_order'] != 5 && $item['item_order'] > 10) continue;
+                // Untuk Section 5: jangan skip item 3 (Jumlah) meskipun field_type = number
+                if ($section['section_order'] == 5 && $item['field_type'] == 'number' && $item['item_order'] != 3) continue;
+            }
+            
+            $processed[] = $item['item_id'];
+            
+            // Section 2: Penawaran harga (nama vendor + harga)
+            if ($section['section_order'] == 2 && $item['item_order'] >= 1 && $item['item_order'] <= 3) {
+                $hargaItem = null;
+                foreach ($items as $hi) {
+                    if ($hi['item_order'] == ($item['item_order'] * 10 + 1)) {
+                        $hargaItem = $hi;
+                        $processed[] = $hi['item_id'];
+                        break;
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> Penawaran harga ' . $displayOrder . ' (nama Vendor)</td>';
+                echo '<td colspan="3" class="excel-result-text">';
+                if (isset($item['response_value']) && $item['response_value']) {
+                    echo htmlspecialchars($item['response_value']);
+                    if ($hargaItem && isset($hargaItem['response_value']) && $hargaItem['response_value']) {
+                        echo '<br><strong>' . formatHarga($hargaItem['response_value']) . '</strong>';
+                    }
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 2: Approval QCF (special)
+            else if ($section['section_order'] == 2 && $item['item_order'] == 4) {
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> Approval QCF</td>';
+                echo '<td colspan="3" class="excel-result-text">';
+                echo isset($item['response_value']) && $item['response_value'] ? htmlspecialchars($item['response_value']) : 'Akan ditampilkan otomatis berdasarkan Total Harga';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 2: Periode QCF (item 7) - Special handling for date field
+            else if ($section['section_order'] == 2 && $item['item_order'] == 7) {
+                $hasDate = isset($item['response_value']) && $item['response_value'];
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> Periode QCF</td>';
+                echo '<td class="excel-cell-center">';
+                echo $hasDate ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo !$hasDate ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo $hasDate ? formatDate($item['response_value']) : '-';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 3: Penerimaan Pembayaran - Special handling (sesuai template persis)
+            else if ($section['section_order'] == 3) {
+                // Item 1: Konfirmasi Qty (checkbox dengan info di kolom Tanggal)
+                if ($item['item_order'] == 1) {
+                    echo '<tr>';
+                    echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                    echo '</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                    echo '</td>';
+                    echo '<td class="excel-cell-center">-</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+                // Item 2: Bukti Transfer I - tampilkan tanggal di kolom Tanggal
+                if ($item['item_order'] == 2) {
+                    echo '<tr>';
+                    echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td colspan="2" class="excel-cell-center">-</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($item['response_value']) && $item['response_value']) ? formatDate($item['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+                // Item 3: Nilai trasfer I (sub-item indented)
+                if ($item['item_order'] == 3) {
+                    echo '<tr>';
+                    echo '<td style="padding-left:30px;">' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td colspan="3">';
+                    echo (isset($item['response_value']) && $item['response_value']) ? formatHarga($item['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                }
+                // Item 4: Info konfirmasi I (sub-item indented, radio)
+                if ($item['item_order'] == 4) {
+                    echo '<tr>';
+                    echo '<td style="padding-left:30px;">' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td colspan="3" style="text-align:center;">';
+                    if (isset($item['response_value'])) {
+                        if ($item['response_value'] == 'sesuai') {
+                            echo '<span class="excel-result-check yes">✓ Sesuai</span>';
+                        } else if ($item['response_value'] == 'tidak_sesuai') {
+                            echo '<span class="excel-result-check no">✗ Tidak Sesuai</span>';
+                        } else {
+                            echo '-';
+                        }
+                    } else {
+                        echo '-';
+                    }
+                    echo '</td>';
+                    echo '</tr>';
+                }
+                // Item 5: Bukti Transfer II - tampilkan tanggal di kolom Tanggal
+                if ($item['item_order'] == 5) {
+                    echo '<tr>';
+                    echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td colspan="2" class="excel-cell-center">-</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($item['response_value']) && $item['response_value']) ? formatDate($item['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+                // Item 6: Nilai trasfer II (sub-item indented)
+                if ($item['item_order'] == 6) {
+                    echo '<tr>';
+                    echo '<td style="padding-left:30px;">' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td colspan="3">';
+                    echo (isset($item['response_value']) && $item['response_value']) ? formatHarga($item['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                }
+                // Item 7: Info konfirmasi II (sub-item indented, radio)
+                if ($item['item_order'] == 7) {
+                    echo '<tr>';
+                    echo '<td style="padding-left:30px;">' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td colspan="3" style="text-align:center;">';
+                    if (isset($item['response_value'])) {
+                        if ($item['response_value'] == 'sesuai') {
+                            echo '<span class="excel-result-check yes">✓ Sesuai</span>';
+                        } else if ($item['response_value'] == 'tidak_sesuai') {
+                            echo '<span class="excel-result-check no">✗ Tidak Sesuai</span>';
+                        } else {
+                            echo '-';
+                        }
+                    } else {
+                        echo '-';
+                    }
+                    echo '</td>';
+                    echo '</tr>';
+                }
+                // Item 8: Sisa (dengan numbering)
+                if ($item['item_order'] == 8) {
+                    echo '<tr>';
+                    echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td colspan="3">';
+                    echo (isset($item['response_value']) && $item['response_value']) ? formatHarga($item['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+                // Item 9: Email instruksi - tampilkan tanggal di kolom Tanggal
+                if ($item['item_order'] == 9) {
+                    echo '<tr>';
+                    echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td colspan="2" class="excel-cell-center">-</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($item['response_value']) && $item['response_value']) ? formatDate($item['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+            }
+            // Section 4 item 5: Qty Mix oil tidak melebihi SPK/PJB (Sesuai/Tidak Sesuai)
+            else if ($section['section_order'] == 4 && $item['item_order'] == 5) {
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'sesuai') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'tidak_sesuai') ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">-</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 5 item 3: Jumlah (number di kolom Ada/Tidak Ada + radio Sesuai/Tidak Sesuai di kolom Tanggal)
+            else if ($section['section_order'] == 5 && $item['item_order'] == 3) {
+                $kesesuaianItem = null;
+                foreach ($items as $ki) {
+                    if ($ki['item_order'] == 31 && $ki['field_type'] == 'radio') {
+                        $kesesuaianItem = $ki;
+                        $processed[] = $ki['item_id'];
+                        break;
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                echo '<td colspan="2" class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value']) ? formatHarga($item['response_value']) : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                if ($kesesuaianItem && isset($kesesuaianItem['response_value']) && $kesesuaianItem['response_value']) {
+                    if ($kesesuaianItem['response_value'] == 'sesuai') {
+                        echo '<span class="excel-result-check yes">✓</span> Sesuai';
+                    } else if ($kesesuaianItem['response_value'] == 'tidak_sesuai') {
+                        echo '<span class="excel-result-check no">✗</span> Tidak Sesuai';
+                    }
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Regular items: Ada/Tidak ada + Tanggal
+            else if ($item['field_type'] == 'radio' || $item['field_type'] == 'checkbox') {
+                $dateItem = null;
+                $olehItem = null;
+                
+                foreach ($items as $di) {
+                    if ($di['item_order'] == ($item['item_order'] * 10 + 1) && $di['field_type'] == 'date') {
+                        $dateItem = $di;
+                        $processed[] = $di['item_id'];
+                    }
+                    if ($di['item_order'] == ($item['item_order'] * 10 + 2) && $di['field_type'] == 'text') {
+                        $olehItem = $di;
+                        $processed[] = $di['item_id'];
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                // Hanya tampilkan tanggal jika user memilih "Ada"
+                if (isset($item['response_value']) && $item['response_value'] == 'ada' && $dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) {
+                    echo formatDate($dateItem['response_value']);
+                    if ($olehItem && isset($olehItem['response_value']) && $olehItem['response_value']) {
+                        echo '<br><small style="color:#6c757d;">Oleh: ' . htmlspecialchars($olehItem['response_value']) . '</small>';
+                    }
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+        }
+    }
+    
+    // RENDER FUNCTION UNTUK BARBES & JUAL ASET
+    function renderBarbesItems($section, &$displayOrder) {
+        $items = $section['items'];
+        $processed = [];
+        
+        foreach ($items as $item) {
+            if (in_array($item['item_id'], $processed)) continue;
+            
+            $processed[] = $item['item_id'];
+            
+            // Section 2: Penawaran harga (nama vendor + harga)
+            if ($section['section_order'] == 2 && $item['item_order'] >= 1 && $item['item_order'] <= 3 && $item['field_type'] == 'text') {
+                $hargaItem = null;
+                foreach ($items as $hi) {
+                    if ($hi['item_order'] == ($item['item_order'] * 10 + 1) && $hi['field_type'] == 'number') {
+                        $hargaItem = $hi;
+                        $processed[] = $hi['item_id'];
+                        break;
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                echo '<td colspan="3" class="excel-result-text">';
+                if (isset($item['response_value']) && $item['response_value']) {
+                    echo htmlspecialchars($item['response_value']);
+                    if ($hargaItem && isset($hargaItem['response_value']) && $hargaItem['response_value']) {
+                        echo '<br><strong>' . formatHarga($hargaItem['response_value']) . '</strong>';
+                    }
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 2: Approval QCF (item_order 4) - show Authorized Parties
+            else if ($section['section_order'] == 2 && $item['item_order'] == 4) {
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> Approval QCF</td>';
+                echo '<td colspan="3" class="excel-result-text">';
+                echo '<div style="font-style:italic;color:#6c757d;">Authorized Parties:</div>';
+                echo '<div style="margin-top:5px;">';
+                echo isset($item['response_value']) && $item['response_value'] ? htmlspecialchars($item['response_value']) : 'Akan ditampilkan otomatis berdasarkan Total Harga';
+                echo '</div>';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 2: Items dengan radio Ada/Tidak + Tanggal (item 5-10 dan 110)
+            else if ($section['section_order'] == 2 && $item['field_type'] == 'radio' && ($item['item_order'] >= 5 && $item['item_order'] <= 10 || $item['item_order'] == 110)) {
+                $dateItem = null;
+                foreach ($items as $di) {
+                    if ($di['item_order'] == ($item['item_order'] * 10 + 1) && $di['field_type'] == 'date') {
+                        $dateItem = $di;
+                        $processed[] = $di['item_id'];
+                        break;
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 4: Items 1-4 dengan radio Ada/Tidak + Tanggal
+            else if ($section['section_order'] == 4 && $item['field_type'] == 'radio' && $item['item_order'] >= 1 && $item['item_order'] <= 4) {
+                $dateItem = null;
+                $olehItem = null;
+                
+                // Cari tanggal items (item_order x 10 + 1)
+                foreach ($items as $di) {
+                    if ($di['item_order'] == ($item['item_order'] * 10 + 1) && $di['field_type'] == 'date') {
+                        $dateItem = $di;
+                        $processed[] = $di['item_id'];
+                    }
+                    // Item 4 punya field "Oleh" (item_order 42)
+                    if ($item['item_order'] == 4 && $di['item_order'] == 42 && $di['field_type'] == 'text') {
+                        $olehItem = $di;
+                        $processed[] = $di['item_id'];
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                if ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) {
+                    echo formatDate($dateItem['response_value']);
+                    if ($olehItem && isset($olehItem['response_value']) && $olehItem['response_value']) {
+                        echo '<br><small style="color:#6c757d;">Oleh: ' . htmlspecialchars($olehItem['response_value']) . '</small>';
+                    }
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 4: Item 5 - Dokumen Foto (file upload)
+            else if ($section['section_order'] == 4 && $item['item_order'] == 5 && $item['field_type'] == 'file') {
+                echo '<tr>';
+                echo '<td colspan="4" style="padding:15px;">';
+                echo '<strong><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</strong>';
+                
+                if (isset($item['response_value']) && $item['response_value']) {
+                    $photos = explode(',', $item['response_value']);
+                    echo '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px;margin-top:10px;">';
+                    foreach ($photos as $photo) {
+                        $photo = trim($photo);
+                        if ($photo) {
+                            $photoPath = '../uploads/photos/' . $photo;
+                            echo '<div style="text-align:center;">';
+                            echo '<img src="' . htmlspecialchars($photoPath) . '" style="width:100%;max-width:150px;height:150px;object-fit:cover;border:1px solid #dee2e6;border-radius:4px;" alt="Foto">';
+                            echo '<div style="font-size:11px;color:#6c757d;margin-top:5px;word-break:break-all;">' . htmlspecialchars($photo) . '</div>';
+                            echo '</div>';
+                        }
+                    }
+                    echo '</div>';
+                } else {
+                    echo '<div style="padding:20px;text-align:center;color:#6c757d;background:#f8f9fa;border:1px dashed #dee2e6;border-radius:4px;margin-top:10px;">Tidak ada foto</div>';
+                }
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 4: Item 6 - Qty Barbes (Sesuai/Tidak Sesuai)
+            else if ($section['section_order'] == 4 && $item['item_order'] == 6 && stripos($item['item_text'], 'Qty Barbes') !== false) {
+                $tidakSesuaiItem = null;
+                foreach ($items as $ti) {
+                    if ($ti['item_order'] == 7) {
+                        $tidakSesuaiItem = $ti;
+                        $processed[] = $ti['item_id'];
+                        break;
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> Qty Barbes tidak melebihi SPK/PJB</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && ($item['response_value'] == 'sesuai' || $item['response_value'] == 'ada')) ? '<span class="excel-result-check yes">✓</span><br><small>Sesuai</small>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($tidakSesuaiItem && isset($tidakSesuaiItem['response_value']) && ($tidakSesuaiItem['response_value'] == 'tidak_sesuai' || $tidakSesuaiItem['response_value'] == 'tidak_ada')) ? '<span class="excel-result-check no">✗</span><br><small>Tidak Sesuai</small>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">-</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 3: Special handling untuk Penerimaan Pembayaran
+            else if ($section['section_order'] == 3) {
+                // Item 1: Konfirmasi Qty (radio Ada/Tidak)
+                if ($item['item_order'] == 1) {
+                    echo '<tr>';
+                    echo '<td><span class="item-number">1.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                    echo '</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                    echo '</td>';
+                    echo '<td class="excel-cell-center">-</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+                // Item 2: Bukti Transfer I (hanya menampilkan tanggal)
+                else if ($item['item_order'] == 2) {
+                    // Cari tanggal untuk item 2 (item_order 21)
+                    $dateItem = null;
+                    foreach ($items as $di) {
+                        if ($di['item_order'] == 21 && $di['field_type'] == 'date') {
+                            $dateItem = $di;
+                            $processed[] = $di['item_id'];
                             break;
                         }
                     }
                     
-                    // Cari harga yang sesuai untuk item ini (untuk section Pelaksanaan Penjualan)
-                    $priceValue = '';
-                    foreach ($section['items'] as $priceItem) {
-                        if ($priceItem['item_order'] == ($item['item_order'] * 10 + 1) && $priceItem['field_type'] == 'number') {
-                            $priceValue = $priceItem['response_value'];
+                    echo '<tr>';
+                    echo '<td><span class="item-number">2.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td class="excel-cell-center">-</td>';
+                    echo '<td class="excel-cell-center">-</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                    
+                    // Sub-items untuk Bukti Transfer I
+                    $nilaiItem = null;
+                    $infoItem = null;
+                    foreach ($items as $si) {
+                        if ($si['item_order'] == 3) {
+                            $nilaiItem = $si;
+                            $processed[] = $si['item_id'];
+                        }
+                        if ($si['item_order'] == 4) {
+                            $infoItem = $si;
+                            $processed[] = $si['item_id'];
+                        }
+                    }
+                    
+                    // Nilai transfer I (no numbering)
+                    if ($nilaiItem) {
+                        echo '<tr>';
+                        echo '<td style="padding-left:30px;">' . htmlspecialchars($nilaiItem['item_text']) . '</td>';
+                        echo '<td colspan="3">';
+                        echo (isset($nilaiItem['response_value']) && $nilaiItem['response_value']) ? formatHarga($nilaiItem['response_value']) : 'Rp';
+                        echo '</td>';
+                        echo '</tr>';
+                    }
+                    
+                    // Info konfirmasi I (radio Sesuai/Tidak Sesuai)
+                    if ($infoItem) {
+                        echo '<tr>';
+                        echo '<td style="padding-left:30px;">' . htmlspecialchars($infoItem['item_text']) . '</td>';
+                        echo '<td colspan="3" style="text-align:center;">';
+                        if (isset($infoItem['response_value'])) {
+                            if ($infoItem['response_value'] == 'sesuai') {
+                                echo '<span class="excel-result-check yes">✓ Sesuai</span>';
+                            } else if ($infoItem['response_value'] == 'tidak_sesuai') {
+                                echo '<span class="excel-result-check no">✗ Tidak Sesuai</span>';
+                            } else {
+                                echo '-';
+                            }
+                        } else {
+                            echo '-';
+                        }
+                        echo '</td>';
+                        echo '</tr>';
+                    }
+                }
+                // Item 3 dan 4 sudah diproses sebagai sub-items di atas
+                else if ($item['item_order'] == 3 || $item['item_order'] == 4) {
+                    // Skip, sudah diproses
+                }
+                // Item 5: Bukti Transfer II (hanya menampilkan tanggal)
+                else if ($item['item_order'] == 5) {
+                    // Cari tanggal untuk item 5 (item_order 51)
+                    $dateItem = null;
+                    foreach ($items as $di) {
+                        if ($di['item_order'] == 51 && $di['field_type'] == 'date') {
+                            $dateItem = $di;
+                            $processed[] = $di['item_id'];
                             break;
                         }
                     }
-                ?>
-                <tr>
-                    <td>
-                        <span class="item-number"><?php echo $displayOrder; ?>.</span> 
-                        <?php echo htmlspecialchars($item['item_text']); ?>
-                    </td>
-                    <td class="excel-cell-center">
-                        <?php echo $item['score_value'] > 0 ? $item['score_value'] : '-'; ?>
-                    </td>
-                    <?php if ($item['field_type'] === 'checkbox' || $item['field_type'] === 'radio'): ?>
-                        <td class="excel-cell-center">
-                            <?php if ($item['response_value'] === 'ada' || $item['response_value'] === 'sesuai'): ?>
-                            <span class="excel-result-check yes">✓</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="excel-cell-center">
-                            <?php if ($item['response_value'] === 'tidak_ada' || $item['response_value'] === 'tidak_sesuai'): ?>
-                            <span class="excel-result-check no">✗</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="excel-cell-center">
-                            <?php echo $dateValue ? formatDate($dateValue) : '-'; ?>
-                        </td>
-                    <?php elseif ($item['field_type'] === 'date'): ?>
-                        <td colspan="3" class="excel-result-text">
-                            <?php echo $item['response_value'] ? formatDate($item['response_value']) : '-'; ?>
-                        </td>
-                    <?php elseif ($item['field_type'] === 'text'): ?>
-                        <td colspan="3" class="excel-result-text">
-                            <?php 
-                            // Tampilkan nama vendor + harga (jika ada)
-                            if (!empty($item['response_value'])) {
-                                echo htmlspecialchars($item['response_value']);
-                                if (!empty($priceValue)) {
-                                    echo ' - <strong>Rp ' . number_format(floatval($priceValue), 0, ',', '.') . '</strong>';
+                    
+                    echo '<tr>';
+                    echo '<td><span class="item-number">3.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td class="excel-cell-center">-</td>';
+                    echo '<td class="excel-cell-center">-</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                    
+                    // Sub-items untuk Bukti Transfer II
+                    $nilaiItem = null;
+                    $infoItem = null;
+                    foreach ($items as $si) {
+                        if ($si['item_order'] == 6) {
+                            $nilaiItem = $si;
+                            $processed[] = $si['item_id'];
+                        }
+                        if ($si['item_order'] == 7) {
+                            $infoItem = $si;
+                            $processed[] = $si['item_id'];
+                        }
+                    }
+                    
+                    // Nilai transfer II
+                    if ($nilaiItem) {
+                        echo '<tr>';
+                        echo '<td style="padding-left:30px;">' . htmlspecialchars($nilaiItem['item_text']) . '</td>';
+                        echo '<td colspan="3">';
+                        echo (isset($nilaiItem['response_value']) && $nilaiItem['response_value']) ? formatHarga($nilaiItem['response_value']) : 'Rp';
+                        echo '</td>';
+                        echo '</tr>';
+                    }
+                    
+                    // Info konfirmasi II
+                    if ($infoItem) {
+                        echo '<tr>';
+                        echo '<td style="padding-left:30px;">' . htmlspecialchars($infoItem['item_text']) . '</td>';
+                        echo '<td colspan="3" style="text-align:center;">';
+                        if (isset($infoItem['response_value'])) {
+                            if ($infoItem['response_value'] == 'sesuai') {
+                                echo '<span class="excel-result-check yes">✓ Sesuai</span>';
+                            } else if ($infoItem['response_value'] == 'tidak_sesuai') {
+                                echo '<span class="excel-result-check no">✗ Tidak Sesuai</span>';
+                            } else {
+                                echo '-';
+                            }
+                        } else {
+                            echo '-';
+                        }
+                        echo '</td>';
+                        echo '</tr>';
+                    }
+                }
+                // Item 6 dan 7 sudah diproses sebagai sub-items di atas
+                else if ($item['item_order'] == 6 || $item['item_order'] == 7) {
+                    // Skip, sudah diproses
+                }
+                // Item 8: Sisa (number only, no radio)
+                else if ($item['item_order'] == 8) {
+                    echo '<tr>';
+                    echo '<td><span class="item-number">4.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td colspan="3">';
+                    echo (isset($item['response_value']) && $item['response_value']) ? formatHarga($item['response_value']) : 'Rp';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+                // Item 9: Email instruksi (hanya menampilkan tanggal)
+                else if ($item['item_order'] == 9) {
+                    // Cari tanggal untuk item 9 (item_order 91)
+                    $dateItem = null;
+                    foreach ($items as $di) {
+                        if ($di['item_order'] == 91 && $di['field_type'] == 'date') {
+                            $dateItem = $di;
+                            $processed[] = $di['item_id'];
+                            break;
+                        }
+                    }
+                    
+                    echo '<tr>';
+                    echo '<td><span class="item-number">5.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td class="excel-cell-center">-</td>';
+                    echo '<td class="excel-cell-center">-</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+            }
+            // Regular items untuk section lain (bukan section 2 dan 3)
+            else if ($item['field_type'] == 'radio' && !in_array($section['section_order'], [2, 3])) {
+                $dateItem = null;
+                
+                // Cari tanggal items
+                foreach ($items as $di) {
+                    if ($di['item_order'] == ($item['item_order'] * 10 + 1) && $di['field_type'] == 'date') {
+                        $dateItem = $di;
+                        $processed[] = $di['item_id'];
+                        break;
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+        }
+    }
+    
+    function renderJualAsetItems($section, &$displayOrder) {
+        $items = $section['items'];
+        $processed = [];
+        
+        foreach ($items as $item) {
+            if (in_array($item['item_id'], $processed)) continue;
+            
+            $processed[] = $item['item_id'];
+            
+            // Section 2: Penawaran harga (nama vendor + harga)
+            if ($section['section_order'] == 2 && $item['item_order'] >= 1 && $item['item_order'] <= 3 && $item['field_type'] == 'text' && strpos($item['item_text'], 'Penawaran harga') !== false) {
+                $hargaItem = null;
+                foreach ($items as $hi) {
+                    if ($hi['item_order'] == ($item['item_order'] * 10 + 2) && $hi['field_type'] == 'number') {
+                        $hargaItem = $hi;
+                        $processed[] = $hi['item_id'];
+                        break;
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                echo '<td colspan="3" class="excel-result-text">';
+                if (isset($item['response_value']) && $item['response_value']) {
+                    echo htmlspecialchars($item['response_value']);
+                    if ($hargaItem && isset($hargaItem['response_value']) && $hargaItem['response_value']) {
+                        echo '<br><strong>' . formatHarga($hargaItem['response_value']) . '</strong>';
+                    }
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 2: Approval QCF (item_order 4) - show authorization table
+            else if ($section['section_order'] == 2 && $item['item_order'] == 4 && $item['field_type'] == 'text') {
+                // Parse checkbox values
+                $checkedValues = isset($item['response_value']) ? explode(',', $item['response_value']) : [];
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">4.</span> Approval QCF</td>';
+                echo '<td colspan="3" class="excel-result-text">';
+                echo '<div style="padding:10px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;">';
+                echo '<strong>Authorized Parties:</strong><br>';
+                echo '<table style="width:100%;margin-top:8px;font-size:11px;border-collapse:collapse;" border="1" cellpadding="6">';
+                echo '<tr style="background:#e9ecef;font-weight:bold;">';
+                echo '<th></th><th>≤ Rp. 100Jt</th><th>> Rp 100Jt - ≤ Rp 1M</th><th>> Rp 1M - ≤ 10M</th><th>> Rp 10 M</th>';
+                echo '</tr>';
+                
+                // Procurement row
+                echo '<tr><td style="font-weight:bold;background:#f8f9fa;">Procurement</td>';
+                echo '<td>Local DS Mgr</td><td>BP DS Agri & Food</td><td>Head of BP US & DS Proc</td><td>Head of BP US & DS Proc + CPO</td>';
+                echo '</tr>';
+                echo '<tr><td style="font-weight:bold;background:#f8f9fa;">Ceklist</td>';
+                echo '<td style="text-align:center;">' . (in_array('approval_proc_100jt', $checkedValues) ? '<span class="excel-result-check yes">✓</span>' : '-') . '</td>';
+                echo '<td style="text-align:center;">' . (in_array('approval_proc_1m', $checkedValues) ? '<span class="excel-result-check yes">✓</span>' : '-') . '</td>';
+                echo '<td style="text-align:center;">' . (in_array('approval_proc_10m', $checkedValues) ? '<span class="excel-result-check yes">✓</span>' : '-') . '</td>';
+                echo '<td style="text-align:center;">';
+                if (in_array('approval_proc_10m_1', $checkedValues)) echo '<span class="excel-result-check yes">✓</span> ';
+                if (in_array('approval_proc_10m_2', $checkedValues)) echo '<span class="excel-result-check yes">✓</span>';
+                if (!in_array('approval_proc_10m_1', $checkedValues) && !in_array('approval_proc_10m_2', $checkedValues)) echo '-';
+                echo '</td>';
+                echo '</tr>';
+                
+                // Finance row
+                echo '<tr><td style="font-weight:bold;background:#f8f9fa;">Finance</td>';
+                echo '<td>Na</td><td>Na</td><td>Head of Ops Controller</td><td>DS BU CFO</td>';
+                echo '</tr>';
+                echo '<tr><td style="font-weight:bold;background:#f8f9fa;">Ceklist</td>';
+                echo '<td></td><td></td>';
+                echo '<td style="text-align:center;">' . (in_array('approval_fin_10m', $checkedValues) ? '<span class="excel-result-check yes">✓</span>' : '-') . '</td>';
+                echo '<td style="text-align:center;">' . (in_array('approval_fin_10m_plus', $checkedValues) ? '<span class="excel-result-check yes">✓</span>' : '-') . '</td>';
+                echo '</tr>';
+                
+                // Executive row
+                echo '<tr><td style="font-weight:bold;background:#f8f9fa;">Executive</td>';
+                echo '<td>Na</td><td>Related Head</td><td>DS BU CEO</td><td>DS BU CEO/MD DSI + CFO DS + DS COO</td>';
+                echo '</tr>';
+                echo '<tr><td style="font-weight:bold;background:#f8f9fa;">Ceklist</td>';
+                echo '<td></td>';
+                echo '<td style="text-align:center;">' . (in_array('approval_exec_1m', $checkedValues) ? '<span class="excel-result-check yes">✓</span>' : '-') . '</td>';
+                echo '<td style="text-align:center;">' . (in_array('approval_exec_10m', $checkedValues) ? '<span class="excel-result-check yes">✓</span>' : '-') . '</td>';
+                echo '<td style="text-align:center;">';
+                if (in_array('approval_exec_10m_1', $checkedValues)) echo '<span class="excel-result-check yes">✓</span> ';
+                if (in_array('approval_exec_10m_2', $checkedValues)) echo '<span class="excel-result-check yes">✓</span> ';
+                if (in_array('approval_exec_10m_3', $checkedValues)) echo '<span class="excel-result-check yes">✓</span>';
+                if (!in_array('approval_exec_10m_1', $checkedValues) && !in_array('approval_exec_10m_2', $checkedValues) && !in_array('approval_exec_10m_3', $checkedValues)) echo '-';
+                echo '</td>';
+                echo '</tr>';
+                
+                echo '</table>';
+                echo '</div>';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Section 4: Dokumen Foto (item_order 5)
+            else if ($section['section_order'] == 4 && $item['item_order'] == 5 && $item['field_type'] == 'file') {
+                echo '<tr>';
+                echo '<td><span class="item-number">5.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                echo '<td colspan="3">';
+                
+                if (isset($item['response_value']) && !empty($item['response_value'])) {
+                    $photos = explode(',', $item['response_value']);
+                    echo '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px;">';
+                    foreach ($photos as $photo) {
+                        $photo = trim($photo);
+                        if (!empty($photo)) {
+                            $photoPath = '../uploads/photos/' . $photo;
+                            echo '<div style="border:1px solid #dee2e6;border-radius:4px;overflow:hidden;">';
+                            echo '<img src="' . htmlspecialchars($photoPath) . '" alt="Dokumen Foto" style="width:100%;height:150px;object-fit:cover;">';
+                            echo '<div style="padding:5px;background:#f8f9fa;font-size:11px;text-align:center;word-break:break-all;">' . htmlspecialchars($photo) . '</div>';
+                            echo '</div>';
+                        }
+                    }
+                    echo '</div>';
+                } else {
+                    echo '<em style="color:#6c757d;">Tidak ada foto</em>';
+                }
+                
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            // Regular items: Ada/Tidak ada + Tanggal
+            else if ($item['field_type'] == 'radio') {
+                // Special handling untuk Section 3
+                if ($section['section_order'] == 3) {
+                    // Item 1: Konfirmasi Qty + Brdsk Qty SPK
+                    if ($item['item_order'] == 1) {
+                        $qtyItem = null;
+                        foreach ($items as $qi) {
+                            if ($qi['item_order'] == 22 && $qi['field_type'] == 'number') {
+                                $qtyItem = $qi;
+                                $processed[] = $qi['item_id'];
+                                break;
+                            }
+                        }
+                        
+                        echo '<tr>';
+                        echo '<td><span class="item-number">1.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                        echo '<td class="excel-cell-center">';
+                        echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                        echo '</td>';
+                        echo '<td class="excel-cell-center">';
+                        echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                        echo '</td>';
+                        echo '<td>';
+                        echo '<strong>Brdsk Qty SPK</strong> ';
+                        echo ($qtyItem && isset($qtyItem['response_value']) && $qtyItem['response_value']) ? formatHarga($qtyItem['response_value']) : 'Rp';
+                        echo '</td>';
+                        echo '</tr>';
+                        $displayOrder++;
+                    }
+                    // Item 2: Bukti Transfer I + Tanggal
+                    else if ($item['item_order'] == 2) {
+                        $dateItem = null;
+                        foreach ($items as $di) {
+                            if ($di['item_order'] == 23 && $di['field_type'] == 'date') {
+                                $dateItem = $di;
+                                $processed[] = $di['item_id'];
+                                break;
+                            }
+                        }
+                        
+                        echo '<tr>';
+                        echo '<td><span class="item-number">2.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                        echo '<td class="excel-cell-center">';
+                        echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                        echo '</td>';
+                        echo '<td class="excel-cell-center">';
+                        echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                        echo '</td>';
+                        echo '<td class="excel-cell-center">';
+                        echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                        echo '</td>';
+                        echo '</tr>';
+                        $displayOrder++;
+                        
+                        // Sub-items: Nilai transfer I dan Info konfirmasi
+                        $nilaiItem = null;
+                        $infoItem = null;
+                        foreach ($items as $ni) {
+                            if ($ni['item_order'] == 24) {
+                                $nilaiItem = $ni;
+                                $processed[] = $ni['item_id'];
+                            }
+                            if ($ni['item_order'] == 25) {
+                                $infoItem = $ni;
+                                $processed[] = $ni['item_id'];
+                            }
+                        }
+                        
+                        // Nilai transfer I
+                        if ($nilaiItem) {
+                            echo '<tr>';
+                            echo '<td style="padding-left:30px;">' . htmlspecialchars($nilaiItem['item_text']) . '</td>';
+                            echo '<td colspan="3">';
+                            echo (isset($nilaiItem['response_value']) && $nilaiItem['response_value']) ? formatHarga($nilaiItem['response_value']) : 'Rp';
+                            echo '</td>';
+                            echo '</tr>';
+                        }
+                        
+                        // Info konfirmasi
+                        if ($infoItem) {
+                            echo '<tr>';
+                            echo '<td style="padding-left:30px;">' . htmlspecialchars($infoItem['item_text']) . '</td>';
+                            echo '<td colspan="3" style="text-align:center;">';
+                            if (isset($infoItem['response_value'])) {
+                                if ($infoItem['response_value'] == 'sesuai') {
+                                    echo '<span class="excel-result-check yes">✓ Sesuai</span>';
+                                } else if ($infoItem['response_value'] == 'tidak_sesuai') {
+                                    echo '<span class="excel-result-check no">✗ Tidak Sesuai</span>';
+                                } else {
+                                    echo '-';
                                 }
                             } else {
                                 echo '-';
                             }
-                            ?>
-                        </td>
-                    <?php elseif ($item['field_type'] === 'number'): ?>
-                        <td colspan="3" class="excel-result-text">
-                            <?php echo $item['response_value'] ? '<strong>Rp ' . number_format(floatval($item['response_value']), 0, ',', '.') . '</strong>' : '-'; ?>
-                        </td>
-                    <?php else: ?>
-                        <td colspan="3" class="excel-result-text">
-                            <?php echo htmlspecialchars($item['response_value'] ?: '-'); ?>
-                        </td>
-                    <?php endif; ?>
-                </tr>
-                <?php 
+                            echo '</td>';
+                            echo '</tr>';
+                        }
+                    }
+                    // Item 3: Email instruksi + Tanggal
+                    else if ($item['item_order'] == 3) {
+                        $dateItem = null;
+                        foreach ($items as $di) {
+                            if ($di['item_order'] == 31 && $di['field_type'] == 'date') {
+                                $dateItem = $di;
+                                $processed[] = $di['item_id'];
+                                break;
+                            }
+                        }
+                        
+                        echo '<tr>';
+                        echo '<td><span class="item-number">3.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                        echo '<td class="excel-cell-center">';
+                        echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                        echo '</td>';
+                        echo '<td class="excel-cell-center">';
+                        echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                        echo '</td>';
+                        echo '<td class="excel-cell-center">';
+                        echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                        echo '</td>';
+                        echo '</tr>';
+                        $displayOrder++;
+                    }
+                }
+                // Default rendering untuk section lain
+                else {
+                    $dateItem = null;
+                    
+                    // Cari tanggal items
+                    foreach ($items as $di) {
+                        if ($di['item_order'] == ($item['item_order'] * 10 + 1) && $di['field_type'] == 'date') {
+                            $dateItem = $di;
+                            $processed[] = $di['item_id'];
+                            break;
+                        }
+                    }
+                    
+                    echo '<tr>';
+                    echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($item['response_value']) && $item['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                    echo '</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($item['response_value']) && $item['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                    echo '</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                    echo '</td>';
+                    echo '</tr>';
                     $displayOrder++;
-                endforeach; 
-                ?>
-            </tbody>
-        </table>
+                }
+            }
+        }
+    }
+    
+    // RENDER FUNCTION UNTUK PO NON OA
+    function renderPONonOAItems($section, &$displayOrder) {
+        $items = $section['items'];
         
-        <?php if ($section['section_order'] === 2): ?>
-        <div class="excel-note">Note: dikirim ke Kaber jika Mix Oil yg akan dijual masuk area Kaber</div>
-        <?php endif; ?>
-    </div>
-    <?php endforeach; ?>
+        // Section 2: Pengajuan Pembelian (Ada/Tidak ada/Tanggal)
+        if ($section['section_order'] == 2) {
+            $labels = ['Pre PR', 'RAP', 'Drawing / Gambar', 'Approval Spec', 'PR fully approved'];
+            $baseOrders = [1, 4, 7, 10, 13];
+            
+            foreach ($labels as $idx => $label) {
+                $baseOrder = $baseOrders[$idx];
+                $adaItem = null;
+                $tidakItem = null;
+                $dateItem = null;
+                
+                foreach ($items as $item) {
+                    if ($item['item_order'] == $baseOrder) $adaItem = $item;
+                    if ($item['item_order'] == $baseOrder + 1) $tidakItem = $item;
+                    if ($item['item_order'] == $baseOrder + 2) $dateItem = $item;
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($label) . '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($adaItem && isset($adaItem['response_value']) && $adaItem['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($tidakItem && isset($tidakItem['response_value']) && $tidakItem['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($dateItem && isset($dateItem['response_value']) && $dateItem['response_value']) ? formatDate($dateItem['response_value']) : '-';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+        }
+        // Section 3: Pelaksanaan Pembelian (Penawaran harga)
+        else if ($section['section_order'] == 3) {
+            // Items 1-3: Penawaran harga (nama vendor + harga)
+            for ($i = 1; $i <= 3; $i++) {
+                $namaItem = null;
+                $hargaItem = null;
+                
+                foreach ($items as $item) {
+                    if ($item['item_order'] == ($i * 2 - 1) && $item['field_type'] == 'text') {
+                        $namaItem = $item;
+                    }
+                    if ($item['item_order'] == ($i * 2) && $item['field_type'] == 'number') {
+                        $hargaItem = $item;
+                    }
+                }
+                
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> Penawaran harga ' . $i . ' (nama Vendor)</td>';
+                echo '<td colspan="3" class="excel-result-text">';
+                if (isset($namaItem['response_value']) && $namaItem['response_value']) {
+                    echo htmlspecialchars($namaItem['response_value']);
+                    if ($hargaItem && isset($hargaItem['response_value']) && $hargaItem['response_value']) {
+                        echo '<br><strong>' . formatHarga($hargaItem['response_value']) . '</strong>';
+                    }
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            
+            // Item 4: Approval QCF/Bid - tampilkan tabel authorized parties
+            $approvalItem = null;
+            $approvalSelularItem = null;
+            foreach ($items as $item) {
+                if ($item['item_order'] == 7 && $item['field_type'] == 'text') {
+                    $approvalItem = $item;
+                }
+                if (stripos($item['item_text'], 'Approval Selular') !== false) {
+                    $approvalSelularItem = $item;
+                }
+            }
+            
+            if ($approvalItem) {
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> Approval QCF / Bid</td>';
+                echo '<td colspan="3" class="excel-result-text">';
+                echo '<div style="padding:10px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;">';
+                echo '<strong>Authorized Parties:</strong><br>';
+                echo '<table style="width:100%;margin-top:8px;font-size:11px;border-collapse:collapse;" border="1" cellpadding="4">';
+                echo '<tr style="background:#e9ecef;"><th></th><th>< Rp. 100Jt</th><th>> Rp 100Jt</th></tr>';
+                echo '<tr><td><strong>Procurement</strong></td><td>Local DS Mgr</td><td>QCF will be managed By CM</td></tr>';
+                
+                // Row Selular dengan checkmark - support multiple selections
+                $selularValue = $approvalSelularItem['response_value'] ?? '';
+                $hasLow = (strpos($selularValue, '<100jt') !== false);
+                $hasHigh = (strpos($selularValue, '>100jt') !== false);
+                echo '<tr><td><strong>Selular</strong></td>';
+                echo '<td style="text-align:center;">' . ($hasLow ? '<span class="excel-result-check yes">✓</span>' : '-') . '</td>';
+                echo '<td style="text-align:center;">' . ($hasHigh ? '<span class="excel-result-check yes">✓</span>' : '-') . '</td>';
+                echo '</tr>';
+                
+                echo '</table>';
+                echo '</div>';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            
+            // Item 5: QCF/Bid (Ada/Tidak ada)
+            $qcfAdaItem = null;
+            $qcfTidakItem = null;
+            $qcfDateItem = null;
+            foreach ($items as $item) {
+                if ($item['item_text'] === 'QCF / Bid - Ada') $qcfAdaItem = $item;
+                if ($item['item_text'] === 'QCF / Bid - Tidak ada') $qcfTidakItem = $item;
+                if ($item['item_text'] === 'QCF / Bid - Tanggal') $qcfDateItem = $item;
+            }
+            
+            if ($qcfAdaItem) {
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> QCF / Bid</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($qcfAdaItem['response_value']) && $qcfAdaItem['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($qcfTidakItem && isset($qcfTidakItem['response_value']) && $qcfTidakItem['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($qcfDateItem && isset($qcfDateItem['response_value']) && $qcfDateItem['response_value']) ? formatDate($qcfDateItem['response_value']) : '-';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+            
+            // Item 6: Nego (Ada/Tidak ada/Tanggal)
+            $negoAdaItem = null;
+            $negoTidakItem = null;
+            $negoDateItem = null;
+            foreach ($items as $item) {
+                if ($item['item_text'] === 'Nego - Ada') $negoAdaItem = $item;
+                if ($item['item_text'] === 'Nego - Tidak ada') $negoTidakItem = $item;
+                if ($item['item_text'] === 'Nego - Tanggal') $negoDateItem = $item;
+            }
+            
+            if ($negoAdaItem) {
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> Nego</td>';
+                echo '<td class="excel-cell-center">';
+                echo (isset($negoAdaItem['response_value']) && $negoAdaItem['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($negoTidakItem && isset($negoTidakItem['response_value']) && $negoTidakItem['response_value'] == 'tidak_ada') ? '<span class="excel-result-check no">✗</span>' : '-';
+                echo '</td>';
+                echo '<td class="excel-cell-center">';
+                echo ($negoDateItem && isset($negoDateItem['response_value']) && $negoDateItem['response_value']) ? formatDate($negoDateItem['response_value']) : '-';
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+        }
+        // Section 4: PO (Sesuai/Tidak)
+        else if ($section['section_order'] == 4) {
+            // Items 1-8: dengan pola Sesuai/Tidak
+            $labels = [
+                'Cek Nama Vendor',
+                'Cek Kembali ke RAP/Spec yang disetujui User',
+                'Cek Kembali ke Penawaran',
+                'Cek Tax Code',
+                'Cek TOP',
+                'Cek DD',
+                'Input Note Tambahan PO',
+                'Kirim PO ke Vendor'
+            ];
+            
+            foreach ($labels as $idx => $label) {
+                // Cari item berdasarkan item_text
+                $sesuaiItem = null;
+                $tidakItem = null;
+                
+                foreach ($items as $item) {
+                    if (stripos($item['item_text'], $label . ' - Sesuai') !== false) {
+                        $sesuaiItem = $item;
+                    }
+                    if (stripos($item['item_text'], $label . ' - Tidak') !== false) {
+                        $tidakItem = $item;
+                    }
+                }
+                
+                if ($sesuaiItem && $tidakItem) {
+                    echo '<tr>';
+                    echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($label) . '</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($sesuaiItem['response_value']) && $sesuaiItem['response_value'] == 'sesuai') ? '<span class="excel-result-check yes">✓</span>' : '-';
+                    echo '</td>';
+                    echo '<td class="excel-cell-center">';
+                    echo (isset($tidakItem['response_value']) && $tidakItem['response_value'] == 'tidak') ? '<span class="excel-result-check no">✗</span>' : '-';
+                    echo '</td>';
+                    echo '</tr>';
+                    $displayOrder++;
+                }
+            }
+        }
+    }
+    
+    // Execute render
+    renderTemplateItems($submission['template_id'], $sections, $submission);
+    ?>
     
     <?php if ($submission['notes']): ?>
     <table class="excel-info-table">
@@ -678,6 +2003,37 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
         </tr>
     </table>
     <?php endif; ?>
+    
+    <!-- Kriteria Penilaian Audit -->
+    <div class="card" style="margin-top: 20px; background: #f8f9fa; border-left: 4px solid #007bff;">
+        <h4 style="color: #007bff; margin-bottom: 15px;">📊 Kriteria Penilaian Status Audit</h4>
+        
+        <!-- Kriteria Standar untuk Semua Template -->
+        <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+            <strong style="color: #28a745;">✓ Lengkap</strong>
+            <ul style="margin: 8px 0 0 20px; font-size: 14px;">
+                <li>Item wajib minimal 80% terpenuhi</li>
+                <li>Kelengkapan dokumen minimal 60%</li>
+                <li>Informasi transaksi sudah lengkap</li>
+            </ul>
+        </div>
+        <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+            <strong style="color: #ffc107;">⚠ Perlu Dilengkapi</strong>
+            <ul style="margin: 8px 0 0 20px; font-size: 14px;">
+                <li>Item wajib 60-79% terpenuhi</li>
+                <li>Kelengkapan dokumen 40-59%</li>
+                <li>Beberapa dokumen masih kurang</li>
+            </ul>
+        </div>
+        <div style="background: white; padding: 15px; border-radius: 6px;">
+            <strong style="color: #17a2b8;">ℹ Dalam Proses</strong>
+            <ul style="margin: 8px 0 0 20px; font-size: 14px;">
+                <li>Item wajib kurang dari 60%</li>
+                <li>Dokumen masih dalam proses pengisian</li>
+                <li>Dapat dilanjutkan kemudian</li>
+            </ul>
+        </div>
+    </div>
 </div>
 
 <?php include '../includes/footer.php'; ?>

@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS template_items (
 CREATE TABLE IF NOT EXISTS audit_submissions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     template_id INT NOT NULL,
+    audit_number INT DEFAULT NULL COMMENT 'Nomor audit per template, dimulai dari 1',
     submitted_by INT NOT NULL,
     submission_date DATE NOT NULL,
     seller_name VARCHAR(100),
@@ -73,7 +74,8 @@ CREATE TABLE IF NOT EXISTS audit_submissions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (template_id) REFERENCES audit_templates(id),
-    FOREIGN KEY (submitted_by) REFERENCES users(id)
+    FOREIGN KEY (submitted_by) REFERENCES users(id),
+    INDEX idx_template_audit (template_id, audit_number)
 );
 
 -- Audit responses (answers to checklist items)

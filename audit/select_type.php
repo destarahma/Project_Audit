@@ -65,7 +65,7 @@ include '../includes/header.php';
     </a>
 
     <!-- Card 4: PO Non OA -->
-    <a href="create.php?template_id=7" class="audit-type-card">
+    <a href="create.php?template_id=10" class="audit-type-card">
         <div class="audit-type-icon">
             <i class="fas fa-file-invoice"></i>
         </div>
@@ -76,7 +76,7 @@ include '../includes/header.php';
     </a>
 
     <!-- Card 5: PO Tagging OA -->
-    <a href="create.php?template_id=8" class="audit-type-card">
+    <a href="create.php?template_id=9" class="audit-type-card">
         <div class="audit-type-icon">
             <i class="fas fa-tags"></i>
         </div>

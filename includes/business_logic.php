@@ -256,50 +256,66 @@ class BusinessLogic {
     
     /**
      * DIGITALISASI OUTPUT: Status Audit Otomatis
+     * Disesuaikan dengan jenis audit dan kriteria bisnis
      */
     public function calculateAuditStatus($submissionId) {
-        // Get all completed checklist
+        // Get submission info
+        $stmt = $this->conn->prepare("
+            SELECT s.*, t.template_code, t.template_name
+            FROM audit_submissions s
+            JOIN audit_templates t ON s.template_id = t.id
+            WHERE s.id = ?
+        ");
+        $stmt->bind_param("i", $submissionId);
+        $stmt->execute();
+        $submission = $stmt->get_result()->fetch_assoc();
+        
+        // Get all responses and calculate completion
         $stmt = $this->conn->prepare("
             SELECT 
-                COUNT(*) as total_items,
-                SUM(CASE WHEN ar.response_value = 'ada' THEN 1 ELSE 0 END) as completed_items,
-                SUM(ti.score_value) as max_score,
-                SUM(CASE WHEN ar.response_value = 'ada' THEN ti.score_value ELSE 0 END) as total_score
+                COUNT(DISTINCT ti.id) as total_items,
+                COUNT(DISTINCT CASE WHEN ar.response_value IS NOT NULL AND ar.response_value != '' THEN ar.item_id END) as completed_items,
+                COUNT(DISTINCT CASE WHEN ti.is_required = 1 THEN ti.id END) as required_items,
+                COUNT(DISTINCT CASE WHEN ti.is_required = 1 AND ar.response_value IS NOT NULL AND ar.response_value != '' THEN ar.item_id END) as completed_required
             FROM template_items ti
             JOIN template_sections ts ON ti.section_id = ts.id
             LEFT JOIN audit_responses ar ON ti.id = ar.item_id AND ar.submission_id = ?
-            WHERE ts.template_id = (SELECT template_id FROM audit_submissions WHERE id = ?)
+            WHERE ts.template_id = ? AND ti.field_type != 'hidden'
         ");
-        $stmt->bind_param("ii", $submissionId, $submissionId);
+        $stmt->bind_param("ii", $submissionId, $submission['template_id']);
         $stmt->execute();
         $result = $stmt->get_result()->fetch_assoc();
         
-        $percentage = $result['max_score'] > 0 ? ($result['total_score'] / $result['max_score']) * 100 : 0;
+        $completion_rate = $result['total_items'] > 0 ? ($result['completed_items'] / $result['total_items']) * 100 : 0;
+        $required_rate = $result['required_items'] > 0 ? ($result['completed_required'] / $result['required_items']) * 100 : 100;
         
-        // Determine status
-        if ($percentage >= 90) {
-            $status = 'Sangat Baik';
+        // Unified criteria for all templates
+        // Status berdasarkan kelengkapan item wajib dan dokumen
+        if ($required_rate >= 80 && $completion_rate >= 60) {
+            $status = 'Lengkap';
             $color = 'success';
-        } elseif ($percentage >= 75) {
-            $status = 'Baik';
-            $color = 'info';
-        } elseif ($percentage >= 60) {
-            $status = 'Cukup';
+            $percentage = $completion_rate;
+        } elseif ($required_rate >= 60 && $completion_rate >= 40) {
+            $status = 'Perlu Dilengkapi';
             $color = 'warning';
+            $percentage = $completion_rate;
         } else {
-            $status = 'Perlu Perbaikan';
-            $color = 'danger';
+            $status = 'Dalam Proses';
+            $color = 'info';
+            $percentage = $completion_rate;
         }
         
         return [
             'total_items' => $result['total_items'],
             'completed_items' => $result['completed_items'],
-            'completion_rate' => ($result['completed_items'] / $result['total_items']) * 100,
-            'total_score' => $result['total_score'],
-            'max_score' => $result['max_score'],
+            'required_items' => $result['required_items'],
+            'completed_required' => $result['completed_required'],
+            'completion_rate' => $completion_rate,
+            'required_rate' => $required_rate,
             'percentage' => $percentage,
             'status' => $status,
-            'color' => $color
+            'color' => $color,
+            'template_code' => $submission['template_code'] ?? ''
         ];
     }
     

@@ -67,4 +67,49 @@ function formatDate($date) {
 function formatCurrency($amount) {
     return 'Rp ' . number_format($amount, 0, ',', '.');
 }
+
+/**
+ * Generate audit number untuk template tertentu
+ * Akan mencari nomor terkecil yang tersedia (untuk reuse nomor yang dihapus)
+ * Jika tidak ada gap, akan menggunakan max + 1
+ */
+function getNextAuditNumber($templateId) {
+    $conn = getConnection();
+    
+    // Cari gap dalam penomoran (nomor yang sudah dihapus)
+    $query = "
+        SELECT t1.audit_number + 1 AS gap_start
+        FROM audit_submissions t1
+        WHERE t1.template_id = ?
+        AND NOT EXISTS (
+            SELECT 1 FROM audit_submissions t2 
+            WHERE t2.template_id = ? 
+            AND t2.audit_number = t1.audit_number + 1
+        )
+        AND t1.audit_number + 1 < (
+            SELECT IFNULL(MAX(audit_number), 0) FROM audit_submissions WHERE template_id = ?
+        )
+        ORDER BY gap_start ASC
+        LIMIT 1
+    ";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("iii", $templateId, $templateId, $templateId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        // Ada gap, gunakan nomor terkecil yang kosong
+        $row = $result->fetch_assoc();
+        return $row['gap_start'];
+    } else {
+        // Tidak ada gap, gunakan max + 1
+        $maxQuery = $conn->prepare("SELECT IFNULL(MAX(audit_number), 0) + 1 AS next_number FROM audit_submissions WHERE template_id = ?");
+        $maxQuery->bind_param("i", $templateId);
+        $maxQuery->execute();
+        $maxResult = $maxQuery->get_result();
+        $maxRow = $maxResult->fetch_assoc();
+        return $maxRow['next_number'];
+    }
+}
 ?>

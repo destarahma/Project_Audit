@@ -205,9 +205,12 @@ include '../includes/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($section['items'] as $item): ?>
+                <?php 
+                $itemNo = 1;
+                foreach ($section['items'] as $item): 
+                ?>
                 <tr>
-                    <td class="excel-cell-center"><?php echo $item['item_order']; ?></td>
+                    <td class="excel-cell-center"><?php echo $itemNo++; ?></td>
                     <td><?php echo htmlspecialchars($item['item_text']); ?></td>
                     <td>
                         <span class="badge" style="background: #6c757d;">

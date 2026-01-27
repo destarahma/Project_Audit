@@ -30,6 +30,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         flashMessage('Gagal menambahkan user', 'danger');
     }
     $stmt->close();
+    redirect('admin/users.php');
+}
+
+// Handle user deletion
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
+    $userId = intval($_POST['user_id']);
+    $currentUser = getCurrentUser();
+    
+    // Prevent user from deleting themselves
+    if ($userId === $currentUser['id']) {
+        flashMessage('Anda tidak dapat menghapus akun Anda sendiri', 'danger');
+        redirect('admin/users.php');
+    }
+    
+    // Check if user has submitted audits
+    $checkStmt = $conn->prepare("SELECT COUNT(*) as audit_count FROM audit_submissions WHERE submitted_by = ?");
+    $checkStmt->bind_param("i", $userId);
+    $checkStmt->execute();
+    $result = $checkStmt->get_result();
+    $row = $result->fetch_assoc();
+    $checkStmt->close();
+    
+    if ($row['audit_count'] > 0) {
+        flashMessage('User tidak dapat dihapus karena memiliki ' . $row['audit_count'] . ' audit yang terkait. Hapus audit terlebih dahulu.', 'danger');
+        redirect('admin/users.php');
+    }
+    
+    // Delete user
+    $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
+    $stmt->bind_param("i", $userId);
+    
+    if ($stmt->execute()) {
+        flashMessage('User berhasil dihapus', 'success');
+    } else {
+        flashMessage('Gagal menghapus user', 'danger');
+    }
+    $stmt->close();
+    redirect('admin/users.php');
 }
 
 $users = $conn->query("SELECT * FROM users ORDER BY created_at DESC");
@@ -55,11 +93,13 @@ include '../includes/header.php';
                 <th>Email</th>
                 <th>Role</th>
                 <th>Terdaftar</th>
+                <th>Aksi</th>
             </tr>
         </thead>
         <tbody>
             <?php 
             $no = 1;
+            $currentUser = getCurrentUser();
             while ($row = $users->fetch_assoc()): 
             ?>
             <tr>
@@ -73,6 +113,15 @@ include '../includes/header.php';
                     </span>
                 </td>
                 <td><?php echo formatDate($row['created_at']); ?></td>
+                <td>
+                    <?php if ($row['id'] !== $currentUser['id']): ?>
+                    <button class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>, '<?php echo htmlspecialchars($row['username'], ENT_QUOTES); ?>')">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                    <?php else: ?>
+                    <span class="text-muted" style="font-size: 12px;">Akun Anda</span>
+                    <?php endif; ?>
+                </td>
             </tr>
             <?php endwhile; ?>
         </tbody>
@@ -126,5 +175,49 @@ include '../includes/header.php';
         </form>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteUserModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h2>Konfirmasi Hapus User</h2>
+        <p>Apakah Anda yakin ingin menghapus user <strong id="deleteUsername"></strong>?</p>
+        <p class="text-muted" style="font-size: 14px; margin-top: 10px;">
+            <i class="fas fa-exclamation-triangle"></i> 
+            User yang memiliki audit tidak dapat dihapus. Hapus audit terlebih dahulu.
+        </p>
+        
+        <form method="POST" action="users.php" id="deleteForm">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="user_id" id="deleteUserId">
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-danger">Ya, Hapus</button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('deleteUserModal').style.display='none'">
+                    Batal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmDelete(userId, username) {
+    document.getElementById('deleteUserId').value = userId;
+    document.getElementById('deleteUsername').textContent = username;
+    document.getElementById('deleteUserModal').style.display = 'block';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const addModal = document.getElementById('addUserModal');
+    const deleteModal = document.getElementById('deleteUserModal');
+    if (event.target == addModal) {
+        addModal.style.display = 'none';
+    }
+    if (event.target == deleteModal) {
+        deleteModal.style.display = 'none';
+    }
+}
+</script>
 
 <?php include '../includes/footer.php'; ?>

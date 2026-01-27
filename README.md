@@ -102,6 +102,7 @@ Password: admin123
 Project_Audit/
 ├── admin/                      # Admin pages
 │   ├── templates.php           # Template management list
+│   ├── template_copy.php       # Copy template
 │   ├── template_edit.php       # Edit template & approval rules
 │   ├── template_view.php       # View template preview
 │   └── users.php               # User management
@@ -127,14 +128,20 @@ Project_Audit/
 │   └── database.php            # Actual DB config (don't commit)
 ├── database/                   # Database files
 │   ├── schema.sql              # Main database schema
-│   └── add_advanced_features.sql  # Advanced features migration
+│   ├── add_advanced_features.sql  # Advanced features migration
+│   └── setup_po_templates.sql  # PO templates setup
+├── docs/                       # Documentation
+│   ├── CHANGELOG_PO_TAGGING.md # PO Tagging changelog
+│   └── SETUP_PO_TEMPLATES.md   # PO templates setup guide
 ├── includes/                   # Reusable components
 │   ├── header.php              # Header with sidebar
 │   ├── footer.php              # Footer
 │   ├── functions.php           # Helper functions
 │   └── business_logic.php      # Business logic & validations
+├── uploads/                    # Upload directory
+│   └── photos/                 # Uploaded photos
 ├── .gitignore                  # Git ignore file
-├── generate_password.php       # Password generator utility
+├── CLEANUP_SUMMARY.md          # Cleanup documentation
 ├── index.php                   # Dashboard
 ├── login.php                   # Login page
 ├── logout.php                  # Logout handler

@@ -167,7 +167,6 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
         <a href="edit.php?id=<?php echo $submissionId; ?>" class="btn btn-primary">✏️ Edit</a>
         <?php endif; ?>
         <a href="list.php" class="btn btn-secondary">← Kembali</a>
-        <a href="download_pdf.php?id=<?php echo $submissionId; ?>" class="btn btn-success" target="_blank">📥 Download PDF</a>
         <button onclick="window.print()" class="btn btn-secondary">🖨️ Cetak</button>
     </div>
 </div>
@@ -196,7 +195,6 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
     </div>
     
     <!-- Score Card -->
-    <?php if ($submission['percentage_score'] > 0): ?>
     <div class="excel-score-card">
         <div class="excel-score-item">
             <div class="excel-score-label">STATUS AUDIT</div>
@@ -232,7 +230,6 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
             <?php endif; ?>
         </div>
     </div>
-    <?php endif; ?>
     
     <!-- Business Logic Validation Panel (untuk Mix Oil) -->
     <?php if ($businessValidation): ?>

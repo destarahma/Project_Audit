@@ -247,8 +247,40 @@ function renderPONonOAItems($section, &$displayOrder) {
             $displayOrder++;
         }
         
-        // Additional items rendering continues here...
-        // Keeping it simple for PDF mode
+        // Items 7-9: Alasan penunjukkan Vendor, PO Purchase, Memo
+        $additionalItems = [
+            ['order' => 7, 'label' => 'Alasan penunjukkan Vendor'],
+            ['order' => 8, 'label' => 'PO Purchase'],
+            ['order' => 9, 'label' => 'Memo']
+        ];
+        
+        foreach ($additionalItems as $addItem) {
+            $foundItem = null;
+            foreach ($items as $item) {
+                if ($item['item_order'] == $addItem['order']) {
+                    $foundItem = $item;
+                    break;
+                }
+            }
+            
+            if ($foundItem) {
+                echo '<tr>';
+                echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($addItem['label']) . '</td>';
+                echo '<td colspan="3" class="excel-result-text">';
+                if (isset($foundItem['response_value']) && $foundItem['response_value']) {
+                    if ($foundItem['field_type'] == 'text' || $foundItem['field_type'] == 'textarea') {
+                        echo nl2br(htmlspecialchars($foundItem['response_value']));
+                    } else if ($foundItem['field_type'] == 'radio') {
+                        echo ($foundItem['response_value'] == 'ada') ? '<span class="excel-result-check yes">✓ Ada</span>' : '<span class="excel-result-check no">✗ Tidak ada</span>';
+                    }
+                } else {
+                    echo '-';
+                }
+                echo '</td>';
+                echo '</tr>';
+                $displayOrder++;
+            }
+        }
     }
     // Section 4: PO
     else if ($section['section_order'] == 4) {

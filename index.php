@@ -20,11 +20,11 @@ if ($isAdmin) {
     $result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions");
     $totalSubmissions = $result->fetch_assoc()['total'];
 
-    // Approved submissions (admin: semua)
-    $result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'approved'");
-    $approvedSubmissions = $result->fetch_assoc()['total'];
+    // Draft submissions (admin: semua)
+    $result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'draft'");
+    $draftSubmissions = $result->fetch_assoc()['total'];
 
-    // Submitted (pending review) submissions (admin: semua)
+    // Submitted submissions (admin: semua)
     $result = $conn->query("SELECT COUNT(*) as total FROM audit_submissions WHERE status = 'submitted'");
     $submittedSubmissions = $result->fetch_assoc()['total'];
 
@@ -47,14 +47,14 @@ if ($isAdmin) {
     $totalSubmissions = $stmt->get_result()->fetch_assoc()['total'];
     $stmt->close();
 
-    // Approved submissions (auditor/viewer: hanya punya sendiri)
-    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM audit_submissions WHERE submitted_by = ? AND status = 'approved'");
+    // Draft submissions (auditor/viewer: hanya punya sendiri)
+    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM audit_submissions WHERE submitted_by = ? AND status = 'draft'");
     $stmt->bind_param("i", $currentUser['id']);
     $stmt->execute();
-    $approvedSubmissions = $stmt->get_result()->fetch_assoc()['total'];
+    $draftSubmissions = $stmt->get_result()->fetch_assoc()['total'];
     $stmt->close();
 
-    // Submitted (pending review) submissions (auditor/viewer: hanya punya sendiri)
+    // Submitted submissions (auditor/viewer: hanya punya sendiri)
     $stmt = $conn->prepare("SELECT COUNT(*) as total FROM audit_submissions WHERE submitted_by = ? AND status = 'submitted'");
     $stmt->bind_param("i", $currentUser['id']);
     $stmt->execute();
@@ -94,7 +94,10 @@ include 'includes/header.php';
     <div class="saldo-card">
         <p class="saldo-label"><i class="fas fa-clipboard-list"></i> Total Audit</p>
         <h2 class="saldo-amount"><?php echo $totalSubmissions; ?></h2>
-        <p class="saldo-info"><span style="color: var(--success-color);"><i class="fas fa-check-circle"></i> <?php echo $approvedSubmissions; ?> Approved</span> | <span style="color: #ffc107;"><i class="fas fa-clock"></i> <?php echo $submittedSubmissions; ?> Pending Review</span></p>
+        <p class="saldo-info">
+            <span style="color: #6c757d;"><i class="fas fa-file"></i> <?php echo $draftSubmissions; ?> Draft</span> | 
+            <span style="color: var(--primary-color);"><i class="fas fa-paper-plane"></i> <?php echo $submittedSubmissions; ?> Disubmit</span>
+        </p>
     </div>
     
     <!-- Menu Utama -->

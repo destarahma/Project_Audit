@@ -101,9 +101,11 @@ while ($row = $result->fetch_assoc()) {
     $allItems[$row['item_id']] = $row;
 }
 
-$conn->close();
-
 $pageTitle = 'Detail Audit - ' . $submission['template_name'];
+
+// Load business logic
+require_once '../includes/business_logic.php';
+$bl = new BusinessLogic($conn);
 
 // Load render functions
 require_once 'view_render_functions.php';
@@ -193,17 +195,23 @@ require_once 'view_render_functions.php';
         <div class="excel-score-item">
             <div class="excel-score-label">STATUS AUDIT</div>
             <?php 
-            // Simple status determination based on percentage
-            if ($submission['percentage_score'] >= 80) {
-                $statusClass = 'status-approved';
-                $displayStatus = 'Lengkap';
-            } else if ($submission['percentage_score'] >= 60) {
-                $statusClass = 'status-cukup';
-                $displayStatus = 'Perlu Dilengkapi';
-            } else {
-                $statusClass = 'status-cukup';
-                $displayStatus = 'Dalam Proses';
-            }
+            // Gunakan status dari business logic yang sudah diperbaiki
+            $statusData = $bl->calculateAuditStatus($submissionId);
+            $displayStatus = $statusData['status'];
+            
+            // Mapping status ke class CSS
+            $statusClassMap = [
+                'Lengkap' => 'status-approved',
+                'Compliant' => 'status-approved',
+                'Sangat Baik' => 'status-approved',
+                'Baik' => 'status-baik',
+                'Perlu Dilengkapi' => 'status-warning',
+                'Cukup' => 'status-cukup',
+                'Dalam Proses' => 'status-cukup',
+                'Perlu Perbaikan' => 'status-warning'
+            ];
+            
+            $statusClass = $statusClassMap[$displayStatus] ?? 'status-cukup';
             ?>
             <div class="excel-score-status <?php echo $statusClass; ?>"><?php echo $displayStatus; ?></div>
         </div>
@@ -347,3 +355,9 @@ window.onload = function() {
 
 </body>
 </html>
+<?php
+// Tutup koneksi database setelah semua rendering selesai
+if (isset($conn) && $conn) {
+    $conn->close();
+}
+?>

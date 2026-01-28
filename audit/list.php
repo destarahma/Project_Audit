@@ -66,13 +66,26 @@ if (isAdmin()) {
         $types .= 's';
     }
     
-    // Search by audit number or vendor name
+    // Search by audit number, vendor name, or responses (for PO templates)
     if (!empty($searchQuery)) {
-        $whereConditions[] = "(CONCAT(t.template_code, '-', LPAD(s.audit_number, 5, '0')) LIKE ? OR s.seller_name LIKE ?)";
+        $whereConditions[] = "(
+            CONCAT(t.template_code, '_', LPAD(s.audit_number, 5, '0')) LIKE ? 
+            OR s.seller_name LIKE ?
+            OR EXISTS (
+                SELECT 1 FROM audit_responses ar 
+                JOIN template_items ti ON ar.item_id = ti.id
+                JOIN template_sections ts ON ti.section_id = ts.id
+                WHERE ar.submission_id = s.id 
+                AND ts.section_order = 1 
+                AND ti.item_order = 1
+                AND ar.response_value LIKE ?
+            )
+        )";
         $searchParam = '%' . $searchQuery . '%';
         $params[] = $searchParam;
         $params[] = $searchParam;
-        $types .= 'ss';
+        $params[] = $searchParam;
+        $types .= 'sss';
     }
     
     $whereClause = '';
@@ -128,13 +141,26 @@ if (isAdmin()) {
         $types .= 's';
     }
     
-    // Search by audit number or vendor name
+    // Search by audit number, vendor name, or responses (for PO templates)
     if (!empty($searchQuery)) {
-        $whereConditions[] = "(CONCAT(t.template_code, '-', LPAD(s.audit_number, 5, '0')) LIKE ? OR s.seller_name LIKE ?)";
+        $whereConditions[] = "(
+            CONCAT(t.template_code, '_', LPAD(s.audit_number, 5, '0')) LIKE ? 
+            OR s.seller_name LIKE ?
+            OR EXISTS (
+                SELECT 1 FROM audit_responses ar 
+                JOIN template_items ti ON ar.item_id = ti.id
+                JOIN template_sections ts ON ti.section_id = ts.id
+                WHERE ar.submission_id = s.id 
+                AND ts.section_order = 1 
+                AND ti.item_order = 1
+                AND ar.response_value LIKE ?
+            )
+        )";
         $searchParam = '%' . $searchQuery . '%';
         $params[] = $searchParam;
         $params[] = $searchParam;
-        $types .= 'ss';
+        $params[] = $searchParam;
+        $types .= 'sss';
     }
     
     $whereClause = "WHERE " . implode(" AND ", $whereConditions);
@@ -186,7 +212,7 @@ include '../includes/header.php';
 
 <!-- Search Card -->
 <div class="card" style="margin-bottom: 20px; background: white;">
-    <form method="GET" action="list.php" style="display: flex; gap: 10px; align-items: center;">
+    <form method="GET" action="list.php" id="searchForm" style="display: flex; gap: 10px; align-items: center;">
         <!-- Preserve filter parameters -->
         <?php if (!empty($filterTemplate)): ?>
         <input type="hidden" name="template" value="<?php echo htmlspecialchars($filterTemplate); ?>">
@@ -204,6 +230,7 @@ include '../includes/header.php';
         <div style="flex: 1; position: relative;">
             <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
             <input type="text" 
+                   id="searchInput"
                    name="search" 
                    class="form-control" 
                    placeholder="Cari berdasarkan Nomor Audit atau Nama Vendor..." 
@@ -267,7 +294,7 @@ include '../includes/header.php';
                 <select name="status" class="form-control" style="width: 100%;">
                     <option value="">-- Semua Status --</option>
                     <option value="draft" <?php echo ($filterStatus === 'draft') ? 'selected' : ''; ?>>Draft</option>
-                    <option value="submitted" <?php echo ($filterStatus === 'submitted') ? 'selected' : ''; ?>>Pending Review</option>
+                    <option value="submitted" <?php echo ($filterStatus === 'submitted') ? 'selected' : ''; ?>>Disubmit</option>
                     <option value="reviewed" <?php echo ($filterStatus === 'reviewed') ? 'selected' : ''; ?>>Direview</option>
                     <option value="approved" <?php echo ($filterStatus === 'approved') ? 'selected' : ''; ?>>Disetujui</option>
                     <option value="rejected" <?php echo ($filterStatus === 'rejected') ? 'selected' : ''; ?>>Ditolak</option>
@@ -403,7 +430,7 @@ foreach ($templateOrder as $templateName):
                         <?php 
                         $statusLabels = [
                             'draft' => 'Draft',
-                            'submitted' => 'Pending Review',
+                            'submitted' => 'Disubmit',
                             'reviewed' => 'Direview',
                             'approved' => 'Disetujui',
                             'rejected' => 'Ditolak'
@@ -461,3 +488,20 @@ if ($isFilterActive && $totalFilteredCount === 0):
 <?php endif; ?>
 
 <?php include '../includes/footer.php'; ?>
+
+<script>
+// Auto submit form when Enter is pressed on search input
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchForm = document.getElementById('searchForm');
+    
+    if (searchInput && searchForm) {
+        searchInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchForm.submit();
+            }
+        });
+    }
+});
+</script>

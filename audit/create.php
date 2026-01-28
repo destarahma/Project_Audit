@@ -44,6 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $hasRefund = isset($_POST['has_refund']) ? 1 : 0;
     $notes = sanitize($_POST['notes'] ?? '');
     
+    // Tentukan status berdasarkan tombol yang diklik
+    $saveStatus = isset($_POST['save_as_draft']) ? 'draft' : 'submitted';
+    
     // Handle photo upload (optional)
     $photoFiles = '';
     if (isset($_FILES['photo_upload']) && $_FILES['photo_upload']['error'] != UPLOAD_ERR_NO_FILE) {
@@ -194,12 +197,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             INSERT INTO audit_submissions 
             (template_id, audit_number, submitted_by, submission_date, seller_name, unit_location, quantity, unit_price, total_price, 
              total_score, percentage_score, auto_status, required_approvals, approval_level, has_refund, status, notes) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param("iiissssssdsssiis", 
+        $stmt->bind_param("iiissssssdsssiiss", 
             $templateId, $auditNumber, $currentUser['id'], $submissionDate, $sellerName, $unitLocation,
             $quantity, $unitPrice, $totalPrice, $totalScore, $percentageScore, $autoStatus, 
-            $approvalText, $approvalLevel, $hasRefund, $notes
+            $approvalText, $approvalLevel, $hasRefund, $saveStatus, $notes
         );
         
         if ($stmt->execute()) {
@@ -250,7 +253,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $conn->query("UPDATE audit_submissions SET notes = CONCAT(IFNULL(notes, ''), '$approvalNote') WHERE id = $submissionId");
             }
             
-            flashMessage('Audit berhasil disimpan. Skor: ' . number_format($percentageScore, 1) . '% (' . $autoStatus . '). Approval: ' . $approvalText, 'success');
+            if ($saveStatus === 'draft') {
+                flashMessage('Audit berhasil disimpan sebagai Draft. Anda dapat melanjutkan mengisi nanti.', 'success');
+            } else {
+                flashMessage('Audit berhasil disimpan dan disubmit. Skor: ' . number_format($percentageScore, 1) . '% (' . $autoStatus . '). Approval: ' . $approvalText, 'success');
+            }
             redirect('audit/view.php?id=' . $submissionId);
         } else {
             flashMessage('Gagal menyimpan audit', 'danger');
@@ -359,7 +366,12 @@ include '../includes/header.php';
         <div id="templateFields"></div>
         
         <div class="excel-actions">
-            <button type="submit" class="btn btn-primary">💾 Simpan dan Submit</button>
+            <button type="submit" name="save_as_draft" value="1" class="btn btn-secondary" style="background: #6c757d; color: white;">
+                📝 Simpan sebagai Draft
+            </button>
+            <button type="submit" name="save_and_submit" value="1" class="btn btn-primary">
+                💾 Simpan dan Submit
+            </button>
             <a href="select_type.php" class="btn btn-secondary">✕ Batal</a>
         </div>
     </form>
@@ -1926,6 +1938,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const auditForm = document.getElementById('auditForm');
     if (auditForm) {
         auditForm.addEventListener('submit', function(e) {
+            // Skip validation jika simpan sebagai draft
+            const isDraft = e.submitter && e.submitter.name === 'save_as_draft';
+            if (isDraft) {
+                return true; // Izinkan submit tanpa validasi
+            }
+            
             // Get all required fields
             const requiredFields = auditForm.querySelectorAll('[required]');
             let firstInvalidField = null;

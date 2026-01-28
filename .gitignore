@@ -38,6 +38,8 @@ debug.log
 *.sql.bak
 *.sql.backup
 backup/
+backup_cleanup*/
+backup_cleanup_*/
 
 # Uploads & User Content
 uploads/

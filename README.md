@@ -42,33 +42,49 @@ Aplikasi digitalisasi form self audit procurement untuk menggantikan proses manu
 
 ## 📦 Instalasi
 
-### 1. Clone Repositorydestarahma
+### 1. Clone Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/Project_Audit.git
+git clone https://github.com/destarahma/Project_Audit.git
 cd Project_Audit
 ```
 
-### 2. Copy Configuration Files
-```bash
-cp config/config.example.php config/config.php
-cp config/database.example.php config/database.php
-```
-
-### 3. Update Configuration
-Edit `config/config.php`:
+### 2. Buat Configuration Files
+Buat file `config/config.php`:
 ```php
+<?php
+// Base URL
 define('BASE_URL', 'http://localhost/Project_Audit/');
+
+// Session configuration
+ini_set('session.cookie_httponly', 1);
+session_start();
+?>
 ```
 
-Edit `config/database.php`:
+Buat file `config/database.php`:
 ```php
+<?php
+// Database Configuration
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
-define('DB_PASS', '');  // Your password
+define('DB_PASS', '');  // Your MySQL password
 define('DB_NAME', 'audit_system');
+
+// Database connection function
+function getConnection() {
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+    
+    $conn->set_charset("utf8mb4");
+    return $conn;
+}
+?>
 ```
 
-### 4. Create Database
+### 3. Create Database
 ```bash
 # Via command line
 mysql -u root -p -e "CREATE DATABASE audit_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
@@ -80,9 +96,9 @@ mysql -u root -p -e "CREATE DATABASE audit_system CHARACTER SET utf8mb4 COLLATE 
 # 4. Collation: utf8mb4_unicode_ci
 ```
 
-### 5. Import Database Schema
+### 4. Import Database Schema
 ```bash
-# Via command line
+# Via command line (import berurutan)
 mysql -u root -p audit_system < database/schema.sql
 mysql -u root -p audit_system < database/add_advanced_features.sql
 mysql -u root -p audit_system < database/add_audit_numbering.sql
@@ -96,12 +112,12 @@ mysql -u root -p audit_system < database/setup_po_templates.sql
 # 3. Import semua file SQL dari folder database/ secara berurutan
 ```
 
-### 6. Access Application
+### 5. Access Application
 ```
 http://localhost/Project_Audit/
 ```
 
-### 7. Default Login
+### 6. Default Login
 ```
 Username: admin
 Password: admin123
@@ -112,53 +128,59 @@ Password: admin123
 ## 📁 Project Structure
 ```
 Project_Audit/
-├── admin/                      # Admin pages
-│   ├── templates.php           # Template management list
-│   ├── template_copy.php       # Copy template
-│   ├── template_edit.php       # Edit template & approval rules
-│   ├── template_view.php       # View template preview
-│   └── users.php               # User management
-├── api/                        # API endpoints
-│   └── get_template.php        # Get template data (AJAX)
-├── assets/                     # Static assets
+├── admin/                           # Admin pages
+│   ├── templates.php                # Template management list
+│   ├── template_copy.php            # Copy existing template
+│   ├── template_create.php          # Create new template
+│   ├── template_edit.php            # Edit template & approval rules
+│   ├── template_view.php            # View template preview
+│   └── users.php                    # User management
+├── api/                             # API endpoints
+│   └── get_template.php             # Get template data (AJAX)
+├── assets/                          # Static assets
 │   ├── css/
-│   │   ├── style.css           # Main stylesheet
-│   │   └── excel-style.css     # Excel-like form styling
+│   │   ├── style.css                # Main stylesheet
+│   │   └── excel-style.css          # Excel-like form styling
 │   └── js/
-│       └── script.js           # Main JavaScript
-├── audit/                      # Audit pages
-│   ├── select_type.php         # Select audit template
-│   ├── create.php              # Create new audit
-│   ├── list.php                # List all audits
-│   ├── view.php                # View audit detail
-│   ├── delete.php              # Delete audit
-│   └── download_pdf.php        # Download as PDF
-├── config/                     # Configuration files
-│   ├── config.example.php      # Config template (commit this)
-│   ├── config.php              # Actual config (don't commit)
-│   ├── database.example.php    # DB config template
-│   └── database.php            # Actual DB config (don't commit)
-├── database/                   # Database files
-│   ├── schema.sql              # Main database schema
-│   ├── add_advanced_features.sql  # Advanced features migration
-│   └── setup_po_templates.sql  # PO templates setup
-├── docs/                       # Documentation
-│   ├── CHANGELOG_PO_TAGGING.md # PO Tagging changelog
-│   └── SETUP_PO_TEMPLATES.md   # PO templates setup guide
-├── includes/                   # Reusable components
-│   ├── header.php              # Header with sidebar
-│   ├── footer.php              # Footer
-│   ├── functions.php           # Helper functions
-│   └── business_logic.php      # Business logic & validations
-├── uploads/                    # Upload directory
-│   └── photos/                 # Uploaded photos
-├── .gitignore                  # Git ignore file
-├── CLEANUP_SUMMARY.md          # Cleanup documentation
-├── index.php                   # Dashboard
-├── login.php                   # Login page
-├── logout.php                  # Logout handler
-└── README.md                   # This file
+│       └── script.js                # Main JavaScript
+├── audit/                           # Audit pages
+│   ├── select_type.php              # Select audit template
+│   ├── create.php                   # Create new audit
+│   ├── edit.php                     # Edit draft audit
+│   ├── list.php                     # List all audits
+│   ├── view.php                     # View audit detail
+│   ├── view_render_functions.php    # Render functions for templates
+│   ├── delete.php                   # Delete audit
+│   └── download_pdf.php             # Download as PDF
+├── config/                          # Configuration files
+│   ├── config.php                   # Actual config (don't commit)
+│   └── database.php                 # Actual DB config (don't commit)
+├── database/                        # Database files
+│   ├── schema.sql                   # Main database schema
+│   ├── add_advanced_features.sql    # Advanced features migration
+│   ├── add_audit_numbering.sql      # Audit numbering system
+│   ├── add_po_date_fields.sql       # PO date fields migration
+│   ├── add_section4_dates.sql       # Section 4 dates for PO Non OA
+│   ├── reset_audit_numbers.sql      # Reset audit numbers utility
+│   └── setup_po_templates.sql       # PO templates setup
+├── includes/                        # Reusable components
+│   ├── header.php                   # Header with sidebar
+│   ├── footer.php                   # Footer
+│   ├── functions.php                # Helper functions
+│   └── business_logic.php           # Business logic & validations
+├── uploads/                         # Upload directory (git ignored)
+│   └── photos/                      # Uploaded photos
+├── .gitignore                       # Git ignore rules
+├── index.php                        # Dashboard (home page)
+├── login.php                        # Login page
+├── logout.php                       # Logout handler
+└── README.md                        # This documentation
 ```
+
+**Note:** 
+- File `config.example.php` dan `database.example.php` tidak ada di repository ini
+- Folder `backup_cleanup_*/` di-ignore dan tidak masuk repository
+- Folder `docs/` tidak ada di repository ini (dokumentasi ada di README)
 
 ## Untuk Auditor:
 1. **Login** - Masuk menggunakan username dan password
@@ -336,9 +358,8 @@ Aplikasi ini dioptimasi untuk desktop. Untuk mobile access, gunakan landscape mo
 - ✅ Perbaikan view render untuk semua template types
 - ✅ Enhance conditional date validation
 - ✅ Improve business logic validation display
-- ✅ Code cleanup dan dokumentasi
-
-Lihat [CHANGELOG.md](docs/CHANGELOG_PO_TAGGING.md) untuk detail update lengkap.
+- ✅ Code cleanup dan dokumentasi lengkap
+- ✅ Update README dengan struktur folder yang akurat
 
 ## 🚀 Roadmap & Future Improvements
 

@@ -908,15 +908,11 @@ $pageTitle = 'Detail Audit - ' . $submission['template_name'];
             }
             // Section 2: Periode QCF (item 7) - Special handling for date field
             else if ($section['section_order'] == 2 && $item['item_order'] == 7) {
-                $hasDate = isset($item['response_value']) && $item['response_value'];
+                $hasDate = isset($item['response_value']) && !empty($item['response_value']) && 
+                           $item['response_value'] != '0000-00-00' && $item['response_value'] != '0000-00-00 00:00:00';
                 echo '<tr>';
                 echo '<td><span class="item-number">' . $displayOrder . '.</span> Periode QCF</td>';
-                echo '<td class="excel-cell-center">';
-                echo $hasDate ? '<span class="excel-result-check yes">✓</span>' : '-';
-                echo '</td>';
-                echo '<td class="excel-cell-center">';
-                echo !$hasDate ? '<span class="excel-result-check no">✗</span>' : '-';
-                echo '</td>';
+                echo '<td colspan="2" class="excel-cell-gray">&nbsp;</td>';
                 echo '<td class="excel-cell-center">';
                 echo $hasDate ? formatDate($item['response_value']) : '-';
                 echo '</td>';

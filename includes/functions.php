@@ -60,8 +60,12 @@ function sanitize($data) {
 }
 
 function formatDate($date) {
-    if (empty($date)) return '-';
-    return date('d/m/Y', strtotime($date));
+    if (empty($date) || $date == '0000-00-00' || $date == '0000-00-00 00:00:00') return '-';
+    
+    $timestamp = strtotime($date);
+    if ($timestamp === false || $timestamp <= 0) return '-';
+    
+    return date('d/m/Y', $timestamp);
 }
 
 function formatCurrency($amount) {

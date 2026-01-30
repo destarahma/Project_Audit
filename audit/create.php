@@ -710,8 +710,29 @@ function loadTemplate(templateId) {
                                 html += `<td></td>`;
                             }
                         }
-                        // Item 5-10: Radio button dengan kolom tanggal
-                        else if (item.item_order >= 5 && item.item_order <= 10) {
+                        // Item 5-6: Radio button dengan kolom tanggal (QCF dan Vega)
+                        else if (item.item_order >= 5 && item.item_order <= 6) {
+                            html += `<td><span class="item-number">${item.item_order}.</span> ${item.item_text}</td>`;
+                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="ada" class="radio-ada" data-item-id="${item.id}" ${item.is_required ? 'required' : ''}></td>`;
+                            html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="tidak_ada" class="radio-tidak-ada" data-item-id="${item.id}"></td>`;
+                            
+                            // Cari field tanggal yang sesuai
+                            const dateItem = section.items.find(i => i.item_order === (item.item_order * 10 + 1));
+                            
+                            if (dateItem) {
+                                html += `<td><input type="date" name="responses[${dateItem.id}]" id="date-${item.id}" class="date-field" data-radio-id="${item.id}" style="width:100%;"></td>`;
+                            } else {
+                                html += `<td></td>`;
+                            }
+                        }
+                        // Item 7: Periode QCF - Special handling untuk field date langsung (tanpa radio terpisah)
+                        else if (item.item_order === 7 && item.field_type === 'date') {
+                            html += `<td><span class="item-number">7.</span> Periode QCF</td>`;
+                            html += `<td colspan="2" class="excel-cell-gray"></td>`;
+                            html += `<td><input type="date" name="responses[${item.id}]" id="periode-qcf-date" class="date-field" style="width:100%;"></td>`;
+                        }
+                        // Item 8-10: Radio button dengan kolom tanggal (SPK/PJB, Approval SPK, Kirim email)
+                        else if (item.item_order >= 8 && item.item_order <= 10) {
                             html += `<td><span class="item-number">${item.item_order}.</span> ${item.item_text}</td>`;
                             html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="ada" class="radio-ada" data-item-id="${item.id}" ${item.is_required ? 'required' : ''}></td>`;
                             html += `<td class="excel-cell-center"><input type="radio" name="responses[${item.id}]" value="tidak_ada" class="radio-tidak-ada" data-item-id="${item.id}"></td>`;

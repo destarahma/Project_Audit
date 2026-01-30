@@ -326,9 +326,34 @@ function renderPONonOAItems($section, &$displayOrder) {
 
 // Dummy render functions untuk template lain (untuk sementara)
 function renderMixOilItems($section, &$displayOrder) {
-    // Simplified rendering
-    foreach ($section['items'] as $item) {
-        if ($item['field_type'] == 'radio' || $item['field_type'] == 'checkbox') {
+    $items = $section['items'];
+    
+    foreach ($items as $item) {
+        // Skip items dengan order > 10 untuk section 2 (kecuali item 7 - Periode QCF)
+        if ($section['section_order'] == 2 && $item['item_order'] > 10 && $item['item_order'] != 7) {
+            continue;
+        }
+        
+        // Skip item tanggal/number kecuali item 7 untuk section 2
+        if ($section['section_order'] == 2 && ($item['field_type'] == 'date' || $item['field_type'] == 'number') && $item['item_order'] != 7) {
+            continue;
+        }
+        
+        // Special handling untuk Periode QCF (item 7, field_type date)
+        if ($section['section_order'] == 2 && $item['item_order'] == 7 && $item['field_type'] == 'date') {
+            $hasDate = isset($item['response_value']) && !empty($item['response_value']) && 
+                       $item['response_value'] != '0000-00-00' && $item['response_value'] != '0000-00-00 00:00:00';
+            echo '<tr>';
+            echo '<td><span class="item-number">' . $displayOrder . '.</span> Periode QCF</td>';
+            echo '<td colspan="2" class="excel-cell-gray">&nbsp;</td>';
+            echo '<td class="excel-cell-center">';
+            echo $hasDate ? formatDate($item['response_value']) : '-';
+            echo '</td>';
+            echo '</tr>';
+            $displayOrder++;
+        }
+        // Regular radio/checkbox items
+        else if ($item['field_type'] == 'radio' || $item['field_type'] == 'checkbox') {
             echo '<tr>';
             echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
             echo '<td class="excel-cell-center">';
@@ -340,7 +365,9 @@ function renderMixOilItems($section, &$displayOrder) {
             echo '<td class="excel-cell-center">-</td>';
             echo '</tr>';
             $displayOrder++;
-        } else if ($item['field_type'] == 'text' || $item['field_type'] == 'textarea') {
+        } 
+        // Text/textarea items
+        else if ($item['field_type'] == 'text' || $item['field_type'] == 'textarea') {
             echo '<tr>';
             echo '<td><span class="item-number">' . $displayOrder . '.</span> ' . htmlspecialchars($item['item_text']) . '</td>';
             echo '<td colspan="3" class="excel-result-text">';
